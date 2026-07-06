@@ -3,6 +3,9 @@
 
 #include "fwd.h"
 
+#include <wayland-util.h>
+#include <wayland-server-core.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,6 +15,14 @@ struct IvyServer {
     struct wlr_backend *backend;
     struct wlr_renderer *renderer;
     struct wlr_allocator *allocator;
+
+    struct wlr_output_layout *output_layout;
+    struct wlr_scene *scene;
+    struct wlr_scene_output_layout *scene_layout;
+    struct wlr_scene_rect *background;
+
+    struct wl_list outputs;
+    struct wl_listener new_output;
 };
 
 void Ivy_Server_Init(IvyServer *server);

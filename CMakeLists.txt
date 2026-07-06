@@ -14,6 +14,7 @@ pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 add_executable(ivy_compositor
         src/main.c
         src/server.c
+        src/output.c
 )
 
 target_include_directories(ivy_compositor PRIVATE

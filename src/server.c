@@ -1,11 +1,16 @@
 #include "types.h"
 #include "server.h"
+#include "output.h"
 
 #include <wlr/backend.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/wlr_renderer.h>
+#include <wlr/types/wlr_output_layout.h>
+#include "wlr/types/wlr_scene.h"
 
 #include <stdlib.h>
+
+static const float TEST_BACKGROUND_COLOR[4] = { 0.1f, 0.1f, 0.15f, 1.0f };
 
 void Ivy_Server_Init(IvyServer *server)
 {
@@ -24,6 +29,24 @@ void Ivy_Server_Init(IvyServer *server)
 
     server->allocator = wlr_allocator_autocreate(server->backend, server->renderer);
     IVY_CHECK(server->allocator != NULL, "[WARNING] Failed to create wlr_allocator!");
+
+    server->output_layout = wlr_output_layout_create(server->wl_display);
+    IVY_CHECK(server->output_layout != NULL, "[WARNING] Failed to create wlr_output_layout!");
+
+    server->scene = wlr_scene_create();
+    IVY_CHECK(server->scene != NULL, "[WARNING] Failed to create wlr_scene!");
+
+    server->scene_layout = wlr_scene_attach_output_layout(server->scene, server->output_layout);
+    IVY_CHECK(server->scene_layout != NULL, "[WARNING] Failed to attach scene output layout!");
+
+    server->background = wlr_scene_rect_create(&server->scene->tree, 100000, 100000, TEST_BACKGROUND_COLOR);
+    IVY_CHECK(server->background != NULL, "[WARNING] Failed to create background rect!");
+
+    wlr_scene_node_set_position(&server->background->node, -50000, -50000);
+
+    wl_list_init(&server->outputs);
+    server->new_output.notify = Ivy_Server_HandleNewOutput;
+    wl_signal_add(&server->backend->events.new_output, &server->new_output);
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)
@@ -34,6 +57,9 @@ void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)
     const char *socket = wl_display_add_socket_auto(server->wl_display);
     IVY_CHECK(socket != NULL, "[WARNING] Failed to create Wayland socket!");
 
+    bool started = wlr_backend_start(server->backend);
+    IVY_CHECK(started, "[WARNING] Failed to start backend!");
+
     setenv("WAYLAND_DISPLAY", socket, true);
 
     wl_display_run(server->wl_display);
@@ -43,6 +69,7 @@ void Ivy_Server_Destroy(const IvyServer *server)
 {
     IVY_ASSERT(server != NULL, "[ERROR] IvyServer is NULL!");
 
+    wlr_scene_node_destroy(&server->scene->tree.node);
     wlr_allocator_destroy(server->allocator);
     wlr_renderer_destroy(server->renderer);
     wlr_backend_destroy(server->backend);
