@@ -11,6 +11,7 @@
 static void IvyOutput_HandleFrame(struct wl_listener *listener, void *data)
 {
     IvyOutput *output = wl_container_of(listener, output, frame);
+    (void)data;
 
     struct wlr_scene_output *scene_output = wlr_scene_get_scene_output(output->server->scene, output->wlr_output);
     wlr_scene_output_commit(scene_output, NULL);
@@ -31,6 +32,7 @@ static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *dat
 static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data)
 {
     IvyOutput *output = wl_container_of(listener, output, destroy);
+    (void)data;
 
     wl_list_remove(&output->frame.link);
     wl_list_remove(&output->request_state.link);

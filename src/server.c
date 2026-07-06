@@ -1,14 +1,22 @@
 #include "types.h"
 #include "server.h"
 #include "output.h"
+#include "top_level.h"
 
 #include <wlr/backend.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/wlr_renderer.h>
+#include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_subcompositor.h>
+#include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_output_layout.h>
-#include "wlr/types/wlr_scene.h"
+#include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_xdg_shell.h>
 
 #include <stdlib.h>
+#include <unistd.h>
+
+#define IVY_XDG_SHELL_VERSION 6
 
 static const float TEST_BACKGROUND_COLOR[4] = { 0.1f, 0.1f, 0.15f, 1.0f };
 
@@ -47,6 +55,24 @@ void Ivy_Server_Init(IvyServer *server)
     wl_list_init(&server->outputs);
     server->new_output.notify = Ivy_Server_HandleNewOutput;
     wl_signal_add(&server->backend->events.new_output, &server->new_output);
+
+    struct wlr_compositor *compositor = wlr_compositor_create(server->wl_display, 5, server->renderer);
+    IVY_CHECK(compositor != NULL, "[WARNING] Failed to create wlr_compositor!");
+
+    struct wlr_subcompositor *subcompositor = wlr_subcompositor_create(server->wl_display);
+    IVY_CHECK(subcompositor != NULL, "[WARNING] Failed to create wlr_subcompositor!");
+
+    struct wlr_data_device_manager *data_device_manager = wlr_data_device_manager_create(server->wl_display);
+    IVY_CHECK(data_device_manager != NULL, "[WARNING] Failed to create wlr_data_device_manager!");
+
+    server->xdg_shell = wlr_xdg_shell_create(server->wl_display, IVY_XDG_SHELL_VERSION);
+    IVY_CHECK(server->xdg_shell != NULL, "[WARNING] Failed to create wlr_xdg_shell!");
+
+    wl_list_init(&server->topLevels);
+    server->new_xdg_topLevel.notify = Ivy_Server_HandleNewXdgTopLevel;
+
+    wl_signal_add(&server->xdg_shell->events.new_toplevel, &server->new_xdg_topLevel);
+
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)

@@ -11,18 +11,22 @@ extern "C" {
 #endif
 
 struct IvyServer {
-    struct wl_display *wl_display;
-    struct wlr_backend *backend;
-    struct wlr_renderer *renderer;
-    struct wlr_allocator *allocator;
+    struct wl_display               *wl_display;
+    struct wlr_backend              *backend;
+    struct wlr_renderer             *renderer;
+    struct wlr_allocator            *allocator;
 
-    struct wlr_output_layout *output_layout;
-    struct wlr_scene *scene;
-    struct wlr_scene_output_layout *scene_layout;
-    struct wlr_scene_rect *background;
+    struct wlr_output_layout        *output_layout;
+    struct wlr_scene                *scene;
+    struct wlr_scene_output_layout  *scene_layout;
+    struct wlr_scene_rect           *background;
 
-    struct wl_list outputs;
-    struct wl_listener new_output;
+    struct wl_list                  outputs;
+    struct wl_listener              new_output;
+
+    struct wlr_xdg_shell            *xdg_shell;
+    struct wl_listener              new_xdg_topLevel;
+    struct wl_list                  topLevels;
 };
 
 void Ivy_Server_Init(IvyServer *server);

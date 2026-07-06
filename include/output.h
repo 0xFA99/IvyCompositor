@@ -9,13 +9,13 @@ extern "C" {
 #endif
 
 struct IvyOutput {
-    IvyServer *server;
-    struct wlr_output *wlr_output;
+    IvyServer           *server;
+    struct wlr_output   *wlr_output;
 
-    struct wl_list link;
-    struct wl_listener frame;
-    struct wl_listener request_state;
-    struct wl_listener destroy;
+    struct wl_list      link;
+    struct wl_listener  frame;
+    struct wl_listener  request_state;
+    struct wl_listener  destroy;
 };
 
 void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data);
