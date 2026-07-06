@@ -1,3 +1,4 @@
+#include "input.h"
 #include "types.h"
 #include "server.h"
 #include "output.h"
@@ -73,6 +74,12 @@ void Ivy_Server_Init(IvyServer *server)
 
     wl_signal_add(&server->xdg_shell->events.new_toplevel, &server->new_xdg_topLevel);
 
+    server->seat = wlr_seat_create(server->wl_display, "seat0");
+    IVY_CHECK(server->seat != NULL, "[WARNING] Failed to create wlr_seat!");
+
+    wl_list_init(&server->keyboards);
+    server->new_input.notify = Ivy_Server_HandleNewInput;
+    wl_signal_add(&server->backend->events.new_input, &server->new_input);
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)

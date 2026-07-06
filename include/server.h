@@ -27,6 +27,10 @@ struct IvyServer {
     struct wlr_xdg_shell            *xdg_shell;
     struct wl_listener              new_xdg_topLevel;
     struct wl_list                  topLevels;
+
+    struct wlr_seat                 *seat;
+    struct wl_listener              new_input;
+    struct wl_list                  keyboards;
 };
 
 void Ivy_Server_Init(IvyServer *server);

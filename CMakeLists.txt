@@ -16,6 +16,8 @@ add_executable(${PROJECT_NAME}
         src/server.c
         src/output.c
         src/top_level.c
+        src/input.c
+        src/keyboard.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
