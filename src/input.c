@@ -3,6 +3,7 @@
 #include "server.h"
 #include "input.h"
 #include "keyboard.h"
+#include "cursor.h"
 
 #include <wayland-server-protocol.h>
 #include <wlr/types/wlr_input_device.h>
@@ -16,7 +17,10 @@ void Ivy_Server_HandleNewInput(struct wl_listener *listener, void *data)
     if (device->type == WLR_INPUT_DEVICE_KEYBOARD)
         Ivy_Server_NewKeyboard(server, device);
 
-    u32 caps = 0;
+    else if (device->type == WLR_INPUT_DEVICE_POINTER)
+        Ivy_Server_NewPointer(server, device);
+
+    u32 caps = WL_SEAT_CAPABILITY_POINTER;
     if (!wl_list_empty(&server->keyboards))
         caps |= WL_SEAT_CAPABILITY_KEYBOARD;
 

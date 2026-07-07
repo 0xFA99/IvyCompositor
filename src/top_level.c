@@ -1,6 +1,5 @@
 #include "types.h"
 #include "server.h"
-
 #include "top_level.h"
 
 #include <stdlib.h>

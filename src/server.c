@@ -3,6 +3,7 @@
 #include "server.h"
 #include "output.h"
 #include "top_level.h"
+#include "cursor.h"
 
 #include <wlr/backend.h>
 #include <wlr/render/allocator.h>
@@ -80,6 +81,8 @@ void Ivy_Server_Init(IvyServer *server)
     wl_list_init(&server->keyboards);
     server->new_input.notify = Ivy_Server_HandleNewInput;
     wl_signal_add(&server->backend->events.new_input, &server->new_input);
+
+    server->cursor = Ivy_Cursor_Create(server);
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)

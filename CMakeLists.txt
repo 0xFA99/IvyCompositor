@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
         src/top_level.c
         src/input.c
         src/keyboard.c
+        src/cursor.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

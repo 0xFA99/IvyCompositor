@@ -31,6 +31,8 @@ struct IvyServer {
     struct wlr_seat                 *seat;
     struct wl_listener              new_input;
     struct wl_list                  keyboards;
+
+    IvyCursor                       *cursor;
 };
 
 void Ivy_Server_Init(IvyServer *server);
