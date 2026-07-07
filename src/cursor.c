@@ -95,6 +95,16 @@ IvyTopLevel *Ivy_Desktop_TopLevelAt(IvyServer *server, double lx, double ly, str
     return tree ? tree->node.data : NULL;
 }
 
+void Ivy_Cursor_SetSurface(IvyCursor *cursor, struct wlr_surface *surface, u32 hotspot_x, u32 hotspot_y)
+{
+    wlr_cursor_set_surface(cursor->wlr_cursor, surface, hotspot_x, hotspot_y);
+}
+
+void Ivy_Cursor_ResetImage(IvyCursor *cursor)
+{
+    wlr_cursor_set_xcursor(cursor->wlr_cursor, cursor->cursor_mgr, "default");
+}
+
 static void IvyCursor_ProcessCursorMotion(IvyCursor *cursor, u32 time)
 {
     if (cursor->mode == IVY_CURSOR_MOVE) {

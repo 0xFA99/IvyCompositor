@@ -44,6 +44,8 @@ void Ivy_Server_NewPointer(IvyServer *server, struct wlr_input_device *device);
 IvyTopLevel *Ivy_Desktop_TopLevelAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy);
 
 void Ivy_Cursor_BeginInteraction(IvyCursor *cursor, IvyTopLevel *topLevel, IvyCursorMode mode, u32 edges);
+void Ivy_Cursor_SetSurface(IvyCursor *cursor, struct wlr_surface *surface, u32 hotspot_x, u32 hotspot_y);
+void Ivy_Cursor_ResetImage(IvyCursor *cursor);
 
 #ifdef __cplusplus
 }

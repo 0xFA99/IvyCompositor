@@ -14,6 +14,7 @@
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_seat.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -21,6 +22,33 @@
 #define IVY_XDG_SHELL_VERSION 6
 
 static const float TEST_BACKGROUND_COLOR[4] = { 0.1f, 0.1f, 0.15f, 1.0f };
+
+static void IvyServer_SeatRequestCursor(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, request_cursor);
+    struct wlr_seat_pointer_request_set_cursor_event *event = data;
+    struct wlr_seat_client *focused_client = server->seat->pointer_state.focused_client;
+
+    if (focused_client == event->seat_client)
+        Ivy_Cursor_SetSurface(server->cursor, event->surface, event->hotspot_x, event->hotspot_y);
+}
+
+static void IvyServer_SeatPointerFocusChance(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, pointer_focus_change);
+    struct wlr_seat_pointer_focus_change_event *event = data;
+
+    if (event->new_surface == NULL)
+        Ivy_Cursor_ResetImage(server->cursor);
+}
+
+static void IvyServer_SeatRequestSetSelection(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, request_set_selection);
+    struct wlr_seat_request_set_selection_event *event = data;
+
+    wlr_seat_set_selection(server->seat, event->source, event->serial);
+}
 
 void Ivy_Server_Init(IvyServer *server)
 {
@@ -83,6 +111,15 @@ void Ivy_Server_Init(IvyServer *server)
     wl_signal_add(&server->backend->events.new_input, &server->new_input);
 
     server->cursor = Ivy_Cursor_Create(server);
+
+    server->request_cursor.notify = IvyServer_SeatRequestCursor;
+    wl_signal_add(&server->seat->events.request_set_cursor, &server->request_cursor);
+
+    server->pointer_focus_change.notify = IvyServer_SeatPointerFocusChance;
+    wl_signal_add(&server->seat->pointer_state.events.focus_change, &server->pointer_focus_change);
+
+    server->request_set_selection.notify = IvyServer_SeatRequestSetSelection;
+    wl_signal_add(&server->seat->events.request_set_selection, &server->request_set_selection);
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)
@@ -108,6 +145,10 @@ void Ivy_Server_Destroy(const IvyServer *server)
     wl_list_remove(&((IvyServer *)server)->new_input.link);
     wl_list_remove(&((IvyServer *)server)->new_output.link);
     wl_list_remove(&((IvyServer *)server)->new_xdg_topLevel.link);
+
+    wl_list_remove(&((IvyServer *)server)->request_cursor.link);
+    wl_list_remove(&((IvyServer *)server)->pointer_focus_change.link);
+    wl_list_remove(&((IvyServer *)server)->request_set_selection.link);
 
     Ivy_Cursor_Destroy(server->cursor);
 

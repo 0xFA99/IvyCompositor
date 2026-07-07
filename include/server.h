@@ -33,6 +33,9 @@ struct IvyServer {
     struct wl_list                  keyboards;
 
     IvyCursor                       *cursor;
+    struct wl_listener              request_cursor;
+    struct wl_listener              request_set_selection;
+    struct wl_listener              pointer_focus_change;
 };
 
 void Ivy_Server_Init(IvyServer *server);
