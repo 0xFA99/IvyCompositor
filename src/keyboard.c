@@ -1,12 +1,35 @@
 #include "server.h"
 #include "types.h"
 #include "keyboard.h"
+#include "top_level.h"
 
 #include <wlr/types/wlr_keyboard.h>
+#include <wlr/types/wlr_seat.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
-#include <wlr/types/wlr_seat.h>
+#include <stdbool.h>
+
+static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym)
+{
+    switch (sym)
+    {
+        case XKB_KEY_Escape:
+            wl_display_terminate(server->wl_display);
+            break;
+
+        case XKB_KEY_F1:
+            if (wl_list_length(&server->topLevels) < 2) break;
+
+            IvyTopLevel *next_topLevel = wl_container_of(server->topLevels.prev, next_topLevel, link);
+            Ivy_TopLevel_Focus(next_topLevel);
+            break;
+
+        default: return false;
+    }
+
+    return true;
+}
 
 static void IvyKeyboard_HandleModifiers(struct wl_listener *listener, void *data)
 {
@@ -23,8 +46,27 @@ static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
     struct wlr_keyboard_key_event *event = data;
     struct wlr_seat *seat = keyboard->server->seat;
 
-    wlr_seat_set_keyboard(seat, keyboard->wlr_keyboard);
-    wlr_seat_keyboard_notify_key(seat, event->time_msec, event->keycode, event->state);
+    // libinput -> XKB (+8 offset)
+    u32 keycode = event->keycode + 8;
+
+    const xkb_keysym_t *syms;
+    int nsyms = xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
+
+    bool handled = false;
+    u32 modifiers = wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
+
+    if (modifiers & WLR_MODIFIER_ALT && event->state == WL_KEYBOARD_KEY_STATE_PRESSED)
+    {
+        for (int i = 0; i < nsyms; i++) {
+            handled = IvyServer_HandleKeybinding(keyboard->server, syms[i]);
+            if (handled) break;
+        }
+    }
+
+    if (!handled) {
+        wlr_seat_set_keyboard(seat, keyboard->wlr_keyboard);
+        wlr_seat_keyboard_notify_key(seat, event->time_msec, event->keycode, event->state);
+    }
 }
 
 static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data)

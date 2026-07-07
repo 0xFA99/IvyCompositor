@@ -105,6 +105,12 @@ void Ivy_Server_Destroy(const IvyServer *server)
 {
     IVY_ASSERT(server != NULL, "[ERROR] IvyServer is NULL!");
 
+    wl_list_remove(&((IvyServer *)server)->new_input.link);
+    wl_list_remove(&((IvyServer *)server)->new_output.link);
+    wl_list_remove(&((IvyServer *)server)->new_xdg_topLevel.link);
+
+    Ivy_Cursor_Destroy(server->cursor);
+
     wlr_scene_node_destroy(&server->scene->tree.node);
     wlr_allocator_destroy(server->allocator);
     wlr_renderer_destroy(server->renderer);

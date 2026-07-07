@@ -58,6 +58,12 @@ void Ivy_Cursor_Destroy(IvyCursor *cursor)
 {
     if (cursor == NULL) return;
 
+    wl_list_remove(&cursor->motion.link);
+    wl_list_remove(&cursor->motion_absolute.link);
+    wl_list_remove(&cursor->axis.link);
+    wl_list_remove(&cursor->frame.link);
+    wl_list_remove(&cursor->button.link);
+
     wlr_xcursor_manager_destroy(cursor->cursor_mgr);
     wlr_cursor_destroy(cursor->wlr_cursor);
 
