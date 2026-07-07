@@ -21,9 +21,14 @@ struct IvyTopLevel {
     struct wl_listener commit;
 
     struct wl_listener destroy;
+
+    struct wl_listener request_move;
+    struct wl_listener request_resize;
 };
 
 void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data);
+
+void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
 
 #ifdef __cplusplus
 }
