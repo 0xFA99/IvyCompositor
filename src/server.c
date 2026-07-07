@@ -4,6 +4,7 @@
 #include "output.h"
 #include "top_level.h"
 #include "cursor.h"
+#include "popup.h"
 
 #include <wlr/backend.h>
 #include <wlr/render/allocator.h>
@@ -100,8 +101,10 @@ void Ivy_Server_Init(IvyServer *server)
 
     wl_list_init(&server->topLevels);
     server->new_xdg_topLevel.notify = Ivy_Server_HandleNewXdgTopLevel;
-
     wl_signal_add(&server->xdg_shell->events.new_toplevel, &server->new_xdg_topLevel);
+
+    server->new_xdg_popup.notify = Ivy_Server_HandleNewXdgPopup;
+    wl_signal_add(&server->xdg_shell->events.new_popup, &server->new_xdg_popup);
 
     server->seat = wlr_seat_create(server->wl_display, "seat0");
     IVY_CHECK(server->seat != NULL, "[WARNING] Failed to create wlr_seat!");
@@ -145,6 +148,7 @@ void Ivy_Server_Destroy(const IvyServer *server)
     wl_list_remove(&((IvyServer *)server)->new_input.link);
     wl_list_remove(&((IvyServer *)server)->new_output.link);
     wl_list_remove(&((IvyServer *)server)->new_xdg_topLevel.link);
+    wl_list_remove(&((IvyServer *)server)->new_xdg_popup.link);
 
     wl_list_remove(&((IvyServer *)server)->request_cursor.link);
     wl_list_remove(&((IvyServer *)server)->pointer_focus_change.link);

@@ -26,6 +26,7 @@ struct IvyServer {
 
     struct wlr_xdg_shell            *xdg_shell;
     struct wl_listener              new_xdg_topLevel;
+    struct wl_listener              new_xdg_popup;
     struct wl_list                  topLevels;
 
     struct wlr_seat                 *seat;

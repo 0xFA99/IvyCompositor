@@ -10,6 +10,7 @@ typedef struct IvyOutput IvyOutput;
 typedef struct IvyTopLevel IvyTopLevel;
 typedef struct IvyKeyboard IvyKeyboard;
 typedef struct IvyCursor IvyCursor;
+typedef struct IvyPopup IvyPopup;
 
 #ifdef __cplusplus
 }
