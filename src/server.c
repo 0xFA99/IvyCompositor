@@ -123,6 +123,8 @@ void Ivy_Server_Init(IvyServer *server)
 
     server->request_set_selection.notify = IvyServer_SeatRequestSetSelection;
     wl_signal_add(&server->seat->events.request_set_selection, &server->request_set_selection);
+
+    server->current_workspace = 1;
 }
 
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)
@@ -162,4 +164,67 @@ void Ivy_Server_Destroy(IvyServer *server)
     wlr_backend_destroy(server->backend);
 
     wl_display_destroy(server->wl_display);
+}
+
+void Ivy_Server_SwitchWorkspace(IvyServer *server, int workspace)
+{
+    if (server->current_workspace == workspace) return;
+
+    server->current_workspace = workspace;
+
+    IvyTopLevel *topLevel;
+    wl_list_for_each(topLevel, &server->topLevels, link) {
+        if (topLevel->workspace == workspace) {
+            wlr_scene_node_set_enabled(&topLevel->scene_tree->node, true);
+        } else {
+            wlr_scene_node_set_enabled(&topLevel->scene_tree->node, false);
+        }
+    }
+
+    IvyTopLevel *next_focus = NULL;
+    wl_list_for_each(topLevel, &server->topLevels, link) {
+        if (topLevel->workspace == workspace) {
+            next_focus = topLevel;
+            break;
+        }
+    }
+
+    if (next_focus != NULL) {
+        Ivy_TopLevel_Focus(next_focus);
+    } else {
+        wlr_seat_pointer_clear_focus(server->seat);
+        wlr_seat_keyboard_clear_focus(server->seat);
+    }
+}
+
+void Ivy_TopLevel_MoveToWorkspace(IvyTopLevel *topLevel, int workspace)
+{
+    if (topLevel->workspace == workspace) return;
+
+    IvyServer *server = topLevel->server;
+    topLevel->workspace = workspace;
+
+    if (workspace == server->current_workspace) {
+        wlr_scene_node_set_enabled(&topLevel->scene_tree->node, true);
+        Ivy_TopLevel_Focus(topLevel);
+    } else {
+        wlr_scene_node_set_enabled(&topLevel->scene_tree->node, false);
+        struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+        if (focused_surface == topLevel->xdg_toplevel->base->surface) {
+            IvyTopLevel *next_focus = NULL;
+            IvyTopLevel *tmp;
+            wl_list_for_each(tmp, &server->topLevels, link) {
+                if (tmp->workspace == server->current_workspace) {
+                    next_focus = tmp;
+                    break;
+                }
+            }
+            if (next_focus != NULL) {
+                Ivy_TopLevel_Focus(next_focus);
+            } else {
+                wlr_seat_pointer_clear_focus(server->seat);
+                wlr_seat_keyboard_clear_focus(server->seat);
+            }
+        }
+    }
 }

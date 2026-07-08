@@ -3,6 +3,9 @@
 
 #include "fwd.h"
 
+#include <wayland-server-core.h>
+#include <wayland-util.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

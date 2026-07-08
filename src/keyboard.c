@@ -5,14 +5,35 @@
 
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_scene.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
 
-static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym)
+static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 keycode, u32 modifiers)
 {
+    if (keycode >= 10 && keycode <= 18)
+    {
+        int ws = keycode - 9;
+        if (modifiers & WLR_MODIFIER_SHIFT) {
+            if (server->seat->keyboard_state.focused_surface != NULL) {
+                struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
+                if (xdg_toplevel != NULL) {
+                    struct wlr_scene_tree *tree = xdg_toplevel->base->data;
+                    IvyTopLevel *topLevel = tree->node.data;
+                    Ivy_TopLevel_MoveToWorkspace(topLevel, ws);
+                }
+            }
+        } else {
+            Ivy_Server_SwitchWorkspace(server, ws);
+        }
+        return true;
+    }
+
     switch (sym)
     {
         case XKB_KEY_Escape:
@@ -26,10 +47,40 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym)
             Ivy_TopLevel_Focus(next_topLevel);
             break;
 
-        case XKB_KEY_t: // <- Handle ketika tombol 'T' ditekan
+        case XKB_KEY_t:
             if (fork() == 0) {
                 execlp("thunar", "thunar", NULL);
-                _exit(1); // Keluar dari proses fork jika thunar gagal dibuka
+                _exit(1);
+            }
+            break;
+
+        case XKB_KEY_m:
+            if (server->seat->keyboard_state.focused_surface != NULL)
+            {
+                struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
+
+                if (xdg_toplevel != NULL)
+                {
+                    struct wlr_scene_tree *tree = xdg_toplevel->base->data;
+                    IvyTopLevel *topLevel = tree->node.data;
+
+                    Ivy_TopLevel_SetMaximize(topLevel, !topLevel->is_maximized);
+                }
+            }
+            break;
+
+        case XKB_KEY_f:
+            if (server->seat->keyboard_state.focused_surface != NULL) {
+                struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
+
+                if (xdg_toplevel != NULL) {
+                    struct wlr_scene_tree *tree = xdg_toplevel->base->data;
+                    IvyTopLevel *toplevel = tree->node.data;
+
+                    Ivy_TopLevel_SetFullscreen(toplevel, !toplevel->is_fullscreen);
+                }
             }
             break;
 
@@ -54,7 +105,6 @@ static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
     struct wlr_keyboard_key_event *event = data;
     struct wlr_seat *seat = keyboard->server->seat;
 
-    // libinput -> XKB (+8 offset)
     u32 keycode = event->keycode + 8;
 
     const xkb_keysym_t *syms;
@@ -66,7 +116,7 @@ static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
     if (modifiers & WLR_MODIFIER_ALT && event->state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
         for (int i = 0; i < nsyms; i++) {
-            handled = IvyServer_HandleKeybinding(keyboard->server, syms[i]);
+            handled = IvyServer_HandleKeybinding(keyboard->server, syms[i], keycode, modifiers);
             if (handled) break;
         }
     }

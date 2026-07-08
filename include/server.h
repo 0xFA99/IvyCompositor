@@ -37,11 +37,15 @@ struct IvyServer {
     struct wl_listener              request_cursor;
     struct wl_listener              request_set_selection;
     struct wl_listener              pointer_focus_change;
+
+    int                             current_workspace;
 };
 
 void Ivy_Server_Init(IvyServer *server);
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd);
 void Ivy_Server_Destroy(IvyServer *server);
+void Ivy_Server_SwitchWorkspace(IvyServer *server, int workspace);
+void Ivy_TopLevel_MoveToWorkspace(IvyTopLevel *topLevel, int workspace);
 
 #ifdef __cplusplus
 }

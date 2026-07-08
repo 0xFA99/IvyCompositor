@@ -5,6 +5,7 @@
 
 #include <wayland-server-core.h>
 #include <wayland-util.h>
+#include <wlr/util/box.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,11 +25,21 @@ struct IvyTopLevel {
 
     struct wl_listener request_move;
     struct wl_listener request_resize;
+
+    struct wl_listener request_maximize;
+    struct wl_listener request_fullscreen;
+
+    bool is_maximized;
+    bool is_fullscreen;
+    struct wlr_box saved_geometry;
+    int workspace;
 };
 
 void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data);
-
 void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
+
+void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize);
+void Ivy_TopLevel_SetFullscreen(IvyTopLevel *topLevel, bool fullscreen);
 
 #ifdef __cplusplus
 }

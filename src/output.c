@@ -1,4 +1,5 @@
 #include "types.h"
+#include "server.h"
 #include "output.h"
 
 #include <wlr/types/wlr_scene.h>
