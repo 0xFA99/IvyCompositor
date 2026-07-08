@@ -2,7 +2,6 @@
 #define IVY_OUTPUT_H
 
 #include "fwd.h"
-#include "server.h"
 
 #ifdef __cplusplus
 extern "C" {

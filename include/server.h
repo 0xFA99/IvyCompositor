@@ -41,7 +41,7 @@ struct IvyServer {
 
 void Ivy_Server_Init(IvyServer *server);
 void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd);
-void Ivy_Server_Destroy(const IvyServer *server);
+void Ivy_Server_Destroy(IvyServer *server);
 
 #ifdef __cplusplus
 }

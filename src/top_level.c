@@ -116,9 +116,9 @@ void Ivy_TopLevel_Focus(IvyTopLevel *topLevel)
 
     if (prev_surface == surface) return;
 
-    if (prev_surface == NULL) {
+    if (prev_surface != NULL) {
         struct wlr_xdg_toplevel *prev_topLevel = wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
-        if (prev_topLevel == NULL) {
+        if (prev_topLevel != NULL) {
             wlr_xdg_toplevel_set_activated(prev_topLevel, false);
         }
     }
@@ -132,6 +132,6 @@ void Ivy_TopLevel_Focus(IvyTopLevel *topLevel)
 
     wlr_xdg_toplevel_set_activated(topLevel->xdg_toplevel, true);
 
-    if (keyboard == NULL)
+    if (keyboard != NULL)
         wlr_seat_keyboard_notify_enter(seat, surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
 }

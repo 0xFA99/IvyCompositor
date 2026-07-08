@@ -48,5 +48,5 @@ void Ivy_Server_HandleNewXdgPopup(struct wl_listener *listener, void *data)
     wl_signal_add(&xdg_popup->base->surface->events.commit, &popup->commit);
 
     popup->destroy.notify = IvyPopup_HandleDestroy;
-    wl_signal_add(&xdg_popup->base->surface->events.destroy, &popup->destroy);
+    wl_signal_add(&xdg_popup->base->events.destroy, &popup->destroy);
 }

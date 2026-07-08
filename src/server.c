@@ -34,7 +34,7 @@ static void IvyServer_SeatRequestCursor(struct wl_listener *listener, void *data
         Ivy_Cursor_SetSurface(server->cursor, event->surface, event->hotspot_x, event->hotspot_y);
 }
 
-static void IvyServer_SeatPointerFocusChance(struct wl_listener *listener, void *data)
+static void IvyServer_SeatPointerFocusChange(struct wl_listener *listener, void *data)
 {
     IvyServer *server = wl_container_of(listener, server, pointer_focus_change);
     struct wlr_seat_pointer_focus_change_event *event = data;
@@ -118,7 +118,7 @@ void Ivy_Server_Init(IvyServer *server)
     server->request_cursor.notify = IvyServer_SeatRequestCursor;
     wl_signal_add(&server->seat->events.request_set_cursor, &server->request_cursor);
 
-    server->pointer_focus_change.notify = IvyServer_SeatPointerFocusChance;
+    server->pointer_focus_change.notify = IvyServer_SeatPointerFocusChange;
     wl_signal_add(&server->seat->pointer_state.events.focus_change, &server->pointer_focus_change);
 
     server->request_set_selection.notify = IvyServer_SeatRequestSetSelection;
@@ -141,18 +141,18 @@ void Ivy_Server_Run(const IvyServer *restrict server, const char *restrict cmd)
     wl_display_run(server->wl_display);
 }
 
-void Ivy_Server_Destroy(const IvyServer *server)
+void Ivy_Server_Destroy(IvyServer *server)
 {
     IVY_ASSERT(server != NULL, "[ERROR] IvyServer is NULL!");
 
-    wl_list_remove(&((IvyServer *)server)->new_input.link);
-    wl_list_remove(&((IvyServer *)server)->new_output.link);
-    wl_list_remove(&((IvyServer *)server)->new_xdg_topLevel.link);
-    wl_list_remove(&((IvyServer *)server)->new_xdg_popup.link);
+    wl_list_remove(&server->new_input.link);
+    wl_list_remove(&server->new_output.link);
+    wl_list_remove(&server->new_xdg_topLevel.link);
+    wl_list_remove(&server->new_xdg_popup.link);
 
-    wl_list_remove(&((IvyServer *)server)->request_cursor.link);
-    wl_list_remove(&((IvyServer *)server)->pointer_focus_change.link);
-    wl_list_remove(&((IvyServer *)server)->request_set_selection.link);
+    wl_list_remove(&server->request_cursor.link);
+    wl_list_remove(&server->pointer_focus_change.link);
+    wl_list_remove(&server->request_set_selection.link);
 
     Ivy_Cursor_Destroy(server->cursor);
 

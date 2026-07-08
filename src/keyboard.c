@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym)
 {
@@ -23,6 +24,13 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym)
 
             IvyTopLevel *next_topLevel = wl_container_of(server->topLevels.prev, next_topLevel, link);
             Ivy_TopLevel_Focus(next_topLevel);
+            break;
+
+        case XKB_KEY_t: // <- Handle ketika tombol 'T' ditekan
+            if (fork() == 0) {
+                execlp("thunar", "thunar", NULL);
+                _exit(1); // Keluar dari proses fork jika thunar gagal dibuka
+            }
             break;
 
         default: return false;

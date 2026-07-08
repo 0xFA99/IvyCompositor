@@ -235,8 +235,9 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
     wlr_seat_pointer_notify_button(cursor->server->seat, event->time_msec, event->button, event->state);
 
     if (event->state == WL_POINTER_BUTTON_STATE_RELEASED) {
-        // cursor->mode == IVY_CURSOR_PASSTHROUGH;
+        cursor->mode = IVY_CURSOR_PASSTHROUGH;
         cursor->grabbed_topLevel = NULL;
+        Ivy_Cursor_ResetImage(cursor);
     }
     else {
         double sx, sy;
