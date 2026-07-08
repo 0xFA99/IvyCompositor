@@ -5,6 +5,10 @@
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_xdg_shell.h>
+#include "layer_surface.h"
+#include "top_level.h"
 
 #include <stdlib.h>
 #include <time.h>
@@ -65,6 +69,9 @@ void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data)
 
     output->server = server;
     output->wlr_output = wlr_output;
+    wlr_output->data = output;
+
+    wl_list_init(&output->layers);
 
     output->frame.notify = IvyOutput_HandleFrame;
     wl_signal_add(&wlr_output->events.frame, &output->frame);
@@ -81,4 +88,45 @@ void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data)
     struct wlr_scene_output *scene_output = wlr_scene_output_create(server->scene, wlr_output);
 
     wlr_scene_output_layout_add_output(server->scene_layout, layout_output, scene_output);
+
+    output->usable_area.x = layout_output->x;
+    output->usable_area.y = layout_output->y;
+    output->usable_area.width = wlr_output->width;
+    output->usable_area.height = wlr_output->height;
+}
+
+void Ivy_Output_ArrangeLayers(IvyOutput *output)
+{
+    IvyServer *server = output->server;
+    struct wlr_output_layout_output *layout_output = wlr_output_layout_get(server->output_layout, output->wlr_output);
+    if (!layout_output) return;
+
+    struct wlr_box full_area = {
+        .x = layout_output->x,
+        .y = layout_output->y,
+        .width = output->wlr_output->width,
+        .height = output->wlr_output->height
+    };
+
+    output->usable_area = full_area;
+
+    IvyLayerSurface *layer_surface;
+    wl_list_for_each(layer_surface, &output->layers, link) {
+        wlr_scene_layer_surface_v1_configure(layer_surface->scene_layer_surface, &full_area, &output->usable_area);
+    }
+
+    IvyTopLevel *topLevel;
+    wl_list_for_each(topLevel, &server->topLevels, link) {
+        if (topLevel->is_maximized && !topLevel->is_fullscreen) {
+            struct wlr_output *wlr_output = wlr_output_layout_output_at(
+                server->output_layout,
+                topLevel->scene_tree->node.x + topLevel->xdg_toplevel->base->geometry.width * 0.5,
+                topLevel->scene_tree->node.y + topLevel->xdg_toplevel->base->geometry.height * 0.5);
+            
+            if (wlr_output == output->wlr_output) {
+                wlr_scene_node_set_position(&topLevel->scene_tree->node, output->usable_area.x, output->usable_area.y);
+                wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, output->usable_area.width, output->usable_area.height);
+            }
+        }
+    }
 }

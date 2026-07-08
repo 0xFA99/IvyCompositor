@@ -101,7 +101,7 @@ void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data)
 
     topLevel->server = server;
     topLevel->xdg_toplevel = xdg_topLevel;
-    topLevel->scene_tree = wlr_scene_xdg_surface_create(&server->scene->tree, xdg_topLevel->base);
+    topLevel->scene_tree = wlr_scene_xdg_surface_create(server->scene_toplevel, xdg_topLevel->base);
     IVY_CHECK(topLevel->scene_tree != NULL, "[WARNING] Failed to create scene tree for topLevel!");
 
     topLevel->scene_tree->node.data = topLevel;
@@ -196,10 +196,10 @@ void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize)
         }
 
         if (wlr_output) {
-            struct wlr_output_layout_output *layout_output = wlr_output_layout_get(server->output_layout, wlr_output);
+            IvyOutput *ivy_output = wlr_output->data;
 
-            wlr_scene_node_set_position(&topLevel->scene_tree->node, layout_output->x, layout_output->y);
-            wlr_xdg_toplevel_set_size(xdg_toplevel, wlr_output->width, wlr_output->height);
+            wlr_scene_node_set_position(&topLevel->scene_tree->node, ivy_output->usable_area.x, ivy_output->usable_area.y);
+            wlr_xdg_toplevel_set_size(xdg_toplevel, ivy_output->usable_area.width, ivy_output->usable_area.height);
             wlr_xdg_toplevel_set_maximized(xdg_toplevel, true);
             topLevel->is_maximized = true;
         }

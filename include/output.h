@@ -5,6 +5,7 @@
 
 #include <wayland-server-core.h>
 #include <wayland-util.h>
+#include <wlr/util/box.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,9 +19,13 @@ struct IvyOutput {
     struct wl_listener  frame;
     struct wl_listener  request_state;
     struct wl_listener  destroy;
+
+    struct wl_list      layers;
+    struct wlr_box      usable_area;
 };
 
 void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data);
+void Ivy_Output_ArrangeLayers(IvyOutput *output);
 
 #ifdef __cplusplus
 }

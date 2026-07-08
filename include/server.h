@@ -39,6 +39,15 @@ struct IvyServer {
     struct wl_listener              pointer_focus_change;
 
     int                             current_workspace;
+
+    struct wlr_layer_shell_v1       *layer_shell;
+    struct wl_listener              new_layer_surface;
+
+    struct wlr_scene_tree           *scene_background;
+    struct wlr_scene_tree           *scene_bottom;
+    struct wlr_scene_tree           *scene_toplevel;
+    struct wlr_scene_tree           *scene_top;
+    struct wlr_scene_tree           *scene_overlay;
 };
 
 void Ivy_Server_Init(IvyServer *server);

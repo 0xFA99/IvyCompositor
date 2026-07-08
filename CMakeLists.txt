@@ -11,6 +11,12 @@ pkg_check_modules(WAYLAND_SERVER REQUIRED wayland-server)
 pkg_check_modules(WLROOTS REQUIRED wlroots-0.20)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
+execute_process(
+        COMMAND wayland-scanner server-header
+        /usr/share/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml
+        ${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h
+)
+
 add_executable(${PROJECT_NAME}
         src/main.c
         src/server.c
@@ -20,10 +26,12 @@ add_executable(${PROJECT_NAME}
         src/keyboard.c
         src/cursor.c
         src/popup.c
+        src/layer_surface.c
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
         include
+        ${CMAKE_CURRENT_BINARY_DIR}
         ${WAYLAND_SERVER_INCLUDE_DIRS}
         ${WLROOTS_INCLUDE_DIRS}
         ${XKBCOMMON_INCLUDE_DIRS}

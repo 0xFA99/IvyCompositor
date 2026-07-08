@@ -5,6 +5,7 @@
 #include "top_level.h"
 #include "cursor.h"
 #include "popup.h"
+#include "layer_surface.h"
 
 #include <wlr/backend.h>
 #include <wlr/render/allocator.h>
@@ -16,6 +17,7 @@
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -75,10 +77,16 @@ void Ivy_Server_Init(IvyServer *server)
     server->scene = wlr_scene_create();
     IVY_CHECK(server->scene != NULL, "[WARNING] Failed to create wlr_scene!");
 
+    server->scene_background = wlr_scene_tree_create(&server->scene->tree);
+    server->scene_bottom = wlr_scene_tree_create(&server->scene->tree);
+    server->scene_toplevel = wlr_scene_tree_create(&server->scene->tree);
+    server->scene_top = wlr_scene_tree_create(&server->scene->tree);
+    server->scene_overlay = wlr_scene_tree_create(&server->scene->tree);
+
     server->scene_layout = wlr_scene_attach_output_layout(server->scene, server->output_layout);
     IVY_CHECK(server->scene_layout != NULL, "[WARNING] Failed to attach scene output layout!");
 
-    server->background = wlr_scene_rect_create(&server->scene->tree, 100000, 100000, TEST_BACKGROUND_COLOR);
+    server->background = wlr_scene_rect_create(server->scene_background, 100000, 100000, TEST_BACKGROUND_COLOR);
     IVY_CHECK(server->background != NULL, "[WARNING] Failed to create background rect!");
 
     wlr_scene_node_set_position(&server->background->node, -50000, -50000);
@@ -124,6 +132,12 @@ void Ivy_Server_Init(IvyServer *server)
     server->request_set_selection.notify = IvyServer_SeatRequestSetSelection;
     wl_signal_add(&server->seat->events.request_set_selection, &server->request_set_selection);
 
+    server->layer_shell = wlr_layer_shell_v1_create(server->wl_display, 4);
+    IVY_CHECK(server->layer_shell != NULL, "[WARNING] Failed to create wlr_layer_shell_v1!");
+
+    server->new_layer_surface.notify = Ivy_Server_HandleNewLayerSurface;
+    wl_signal_add(&server->layer_shell->events.new_surface, &server->new_layer_surface);
+
     server->current_workspace = 1;
 }
 
@@ -151,6 +165,7 @@ void Ivy_Server_Destroy(IvyServer *server)
     wl_list_remove(&server->new_output.link);
     wl_list_remove(&server->new_xdg_topLevel.link);
     wl_list_remove(&server->new_xdg_popup.link);
+    wl_list_remove(&server->new_layer_surface.link);
 
     wl_list_remove(&server->request_cursor.link);
     wl_list_remove(&server->pointer_focus_change.link);
