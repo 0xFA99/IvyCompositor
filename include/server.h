@@ -43,6 +43,9 @@ struct IvyServer {
     struct wlr_layer_shell_v1       *layer_shell;
     struct wl_listener              new_layer_surface;
 
+    struct wlr_xwayland             *xwayland;
+    struct wl_listener              new_xwayland_surface;
+
     struct wlr_scene_tree           *scene_background;
     struct wlr_scene_tree           *scene_bottom;
     struct wlr_scene_tree           *scene_toplevel;

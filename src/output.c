@@ -6,6 +6,7 @@
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/xwayland.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include "layer_surface.h"
 #include "top_level.h"
@@ -118,14 +119,27 @@ void Ivy_Output_ArrangeLayers(IvyOutput *output)
     IvyTopLevel *topLevel;
     wl_list_for_each(topLevel, &server->topLevels, link) {
         if (topLevel->is_maximized && !topLevel->is_fullscreen) {
+            double center_x, center_y;
+            if (topLevel->type == IVY_TOPLEVEL_XDG) {
+                center_x = topLevel->scene_tree->node.x + topLevel->xdg_toplevel->base->geometry.width * 0.5;
+                center_y = topLevel->scene_tree->node.y + topLevel->xdg_toplevel->base->geometry.height * 0.5;
+            } else {
+                center_x = topLevel->scene_tree->node.x + topLevel->xwayland_surface->width * 0.5;
+                center_y = topLevel->scene_tree->node.y + topLevel->xwayland_surface->height * 0.5;
+            }
+
             struct wlr_output *wlr_output = wlr_output_layout_output_at(
-                server->output_layout,
-                topLevel->scene_tree->node.x + topLevel->xdg_toplevel->base->geometry.width * 0.5,
-                topLevel->scene_tree->node.y + topLevel->xdg_toplevel->base->geometry.height * 0.5);
+                server->output_layout, center_x, center_y);
             
             if (wlr_output == output->wlr_output) {
                 wlr_scene_node_set_position(&topLevel->scene_tree->node, output->usable_area.x, output->usable_area.y);
-                wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, output->usable_area.width, output->usable_area.height);
+                if (topLevel->type == IVY_TOPLEVEL_XDG) {
+                    wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, output->usable_area.width, output->usable_area.height);
+                } else {
+                    wlr_xwayland_surface_configure(topLevel->xwayland_surface,
+                                                   output->usable_area.x, output->usable_area.y,
+                                                   output->usable_area.width, output->usable_area.height);
+                }
             }
         }
     }

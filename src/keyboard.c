@@ -4,6 +4,7 @@
 #include "top_level.h"
 
 #include <wlr/types/wlr_keyboard.h>
+#include <wlr/xwayland.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_scene.h>
@@ -21,10 +22,20 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
         if (modifiers & WLR_MODIFIER_SHIFT) {
             if (server->seat->keyboard_state.focused_surface != NULL) {
                 struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                IvyTopLevel *topLevel = NULL;
+
                 struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
                 if (xdg_toplevel != NULL) {
                     struct wlr_scene_tree *tree = xdg_toplevel->base->data;
-                    IvyTopLevel *topLevel = tree->node.data;
+                    topLevel = tree->node.data;
+                } else {
+                    struct wlr_xwayland_surface *xsurface = wlr_xwayland_surface_try_from_wlr_surface(focused_surface);
+                    if (xsurface != NULL && xsurface->data != NULL) {
+                        topLevel = xsurface->data;
+                    }
+                }
+
+                if (topLevel != NULL) {
                     Ivy_TopLevel_MoveToWorkspace(topLevel, ws);
                 }
             }
@@ -58,13 +69,21 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
             if (server->seat->keyboard_state.focused_surface != NULL)
             {
                 struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                IvyTopLevel *topLevel = NULL;
+
                 struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
-
-                if (xdg_toplevel != NULL)
-                {
+                if (xdg_toplevel != NULL) {
                     struct wlr_scene_tree *tree = xdg_toplevel->base->data;
-                    IvyTopLevel *topLevel = tree->node.data;
+                    topLevel = tree->node.data;
+                } else {
+                    struct wlr_xwayland_surface *xsurface = wlr_xwayland_surface_try_from_wlr_surface(focused_surface);
+                    if (xsurface != NULL && xsurface->data != NULL) {
+                        topLevel = xsurface->data;
+                    }
+                }
 
+                if (topLevel != NULL)
+                {
                     Ivy_TopLevel_SetMaximize(topLevel, !topLevel->is_maximized);
                 }
             }
@@ -73,13 +92,21 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
         case XKB_KEY_f:
             if (server->seat->keyboard_state.focused_surface != NULL) {
                 struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
-                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
+                IvyTopLevel *topLevel = NULL;
 
+                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
                 if (xdg_toplevel != NULL) {
                     struct wlr_scene_tree *tree = xdg_toplevel->base->data;
-                    IvyTopLevel *toplevel = tree->node.data;
+                    topLevel = tree->node.data;
+                } else {
+                    struct wlr_xwayland_surface *xsurface = wlr_xwayland_surface_try_from_wlr_surface(focused_surface);
+                    if (xsurface != NULL && xsurface->data != NULL) {
+                        topLevel = xsurface->data;
+                    }
+                }
 
-                    Ivy_TopLevel_SetFullscreen(toplevel, !toplevel->is_fullscreen);
+                if (topLevel != NULL) {
+                    Ivy_TopLevel_SetFullscreen(topLevel, !topLevel->is_fullscreen);
                 }
             }
             break;

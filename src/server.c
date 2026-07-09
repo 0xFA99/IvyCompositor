@@ -18,6 +18,7 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/xwayland.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -138,6 +139,16 @@ void Ivy_Server_Init(IvyServer *server)
     server->new_layer_surface.notify = Ivy_Server_HandleNewLayerSurface;
     wl_signal_add(&server->layer_shell->events.new_surface, &server->new_layer_surface);
 
+    server->xwayland = wlr_xwayland_create(server->wl_display, compositor, true);
+    if (server->xwayland != NULL) {
+        server->new_xwayland_surface.notify = Ivy_Server_HandleNewXwaylandSurface;
+        wl_signal_add(&server->xwayland->events.new_surface, &server->new_xwayland_surface);
+        wlr_xwayland_set_seat(server->xwayland, server->seat);
+        setenv("DISPLAY", server->xwayland->display_name, true);
+    } else {
+        IVY_CHECK(false, "[WARNING] Failed to create wlr_xwayland!");
+    }
+
     server->current_workspace = 1;
 }
 
@@ -170,6 +181,11 @@ void Ivy_Server_Destroy(IvyServer *server)
     wl_list_remove(&server->request_cursor.link);
     wl_list_remove(&server->pointer_focus_change.link);
     wl_list_remove(&server->request_set_selection.link);
+
+    if (server->xwayland != NULL) {
+        wl_list_remove(&server->new_xwayland_surface.link);
+        wlr_xwayland_destroy(server->xwayland);
+    }
 
     Ivy_Cursor_Destroy(server->cursor);
 
@@ -225,7 +241,10 @@ void Ivy_TopLevel_MoveToWorkspace(IvyTopLevel *topLevel, int workspace)
     } else {
         wlr_scene_node_set_enabled(&topLevel->scene_tree->node, false);
         struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
-        if (focused_surface == topLevel->xdg_toplevel->base->surface) {
+        struct wlr_surface *surface = (topLevel->type == IVY_TOPLEVEL_XDG)
+                                    ? topLevel->xdg_toplevel->base->surface
+                                    : topLevel->xwayland_surface->surface;
+        if (focused_surface == surface) {
             IvyTopLevel *next_focus = NULL;
             IvyTopLevel *tmp;
             wl_list_for_each(tmp, &server->topLevels, link) {

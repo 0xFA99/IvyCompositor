@@ -4,6 +4,7 @@
 #include "cursor.h"
 
 #include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/xwayland.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
@@ -182,12 +183,17 @@ static void IvyCursor_ProcessCursorResize(IvyCursor *cursor)
         }
     }
 
-    struct wlr_box *geo_box = &topLevel->xdg_toplevel->base->geometry;
-    wlr_scene_node_set_position(&topLevel->scene_tree->node, new_left - geo_box->x, new_top - geo_box->y);
-
     int new_width = new_right - new_left;
     int new_height = new_bottom - new_top;
-    wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, new_width, new_height);
+
+    if (topLevel->type == IVY_TOPLEVEL_XDG) {
+        struct wlr_box *geo_box = &topLevel->xdg_toplevel->base->geometry;
+        wlr_scene_node_set_position(&topLevel->scene_tree->node, new_left - geo_box->x, new_top - geo_box->y);
+        wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, new_width, new_height);
+    } else {
+        wlr_scene_node_set_position(&topLevel->scene_tree->node, new_left, new_top);
+        wlr_xwayland_surface_configure(topLevel->xwayland_surface, new_left, new_top, new_width, new_height);
+    }
 }
 
 static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data)
@@ -251,13 +257,23 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
 void Ivy_Cursor_BeginInteraction(IvyCursor *cursor, IvyTopLevel *topLevel, IvyCursorMode mode, u32 edges)
 {
     const struct wlr_surface *focused_surface = cursor->server->seat->pointer_state.focused_surface;
-    if (topLevel->xdg_toplevel->base->surface != focused_surface) return;
+    struct wlr_surface *surface = (topLevel->type == IVY_TOPLEVEL_XDG)
+        ? topLevel->xdg_toplevel->base->surface
+        : topLevel->xwayland_surface->surface;
+    if (surface != focused_surface) return;
 
     cursor->grabbed_topLevel = topLevel;
     cursor->mode = mode;
 
-    const struct wlr_xdg_surface *xdg_surface = topLevel->xdg_toplevel->base;
-    struct wlr_box geo_box = xdg_surface->current.geometry;
+    struct wlr_box geo_box;
+    if (topLevel->type == IVY_TOPLEVEL_XDG) {
+        geo_box = topLevel->xdg_toplevel->base->current.geometry;
+    } else {
+        geo_box.x = 0;
+        geo_box.y = 0;
+        geo_box.width = topLevel->xwayland_surface->width;
+        geo_box.height = topLevel->xwayland_surface->height;
+    }
 
     if (mode == IVY_CURSOR_MOVE) {
         cursor->grab_x = cursor->wlr_cursor->x - topLevel->scene_tree->node.x;

@@ -11,10 +11,21 @@
 extern "C" {
 #endif
 
+enum IvyTopLevelType {
+    IVY_TOPLEVEL_XDG,
+    IVY_TOPLEVEL_XWAYLAND,
+};
+
+struct wlr_xwayland_surface; // forward declaration
+
 struct IvyTopLevel {
     IvyServer *server;
     struct wl_list link;
-    struct wlr_xdg_toplevel *xdg_toplevel;
+    enum IvyTopLevelType type;
+    union {
+        struct wlr_xdg_toplevel *xdg_toplevel;
+        struct wlr_xwayland_surface *xwayland_surface;
+    };
     struct wlr_scene_tree *scene_tree;
 
     struct wl_listener map;
@@ -28,6 +39,11 @@ struct IvyTopLevel {
 
     struct wl_listener request_maximize;
     struct wl_listener request_fullscreen;
+    struct wl_listener request_activate;
+    struct wl_listener request_configure;
+
+    struct wl_listener associate;
+    struct wl_listener dissociate;
 
     bool is_maximized;
     bool is_fullscreen;
@@ -36,6 +52,7 @@ struct IvyTopLevel {
 };
 
 void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data);
+void Ivy_Server_HandleNewXwaylandSurface(struct wl_listener *listener, void *data);
 void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
 
 void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize);
