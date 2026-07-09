@@ -17,6 +17,8 @@ enum IvyTopLevelType {
 };
 
 struct wlr_xwayland_surface; // forward declaration
+struct wlr_xdg_toplevel_decoration_v1; // forward declaration
+struct wlr_scene_rect; // forward declaration
 
 struct IvyTopLevel {
     IvyServer *server;
@@ -45,6 +47,15 @@ struct IvyTopLevel {
     struct wl_listener associate;
     struct wl_listener dissociate;
 
+    struct wlr_xdg_toplevel_decoration_v1 *xdg_decoration;
+    struct wl_listener decoration_request_mode;
+    struct wl_listener decoration_destroy;
+
+    struct wlr_scene_rect *border_top;
+    struct wlr_scene_rect *border_bottom;
+    struct wlr_scene_rect *border_left;
+    struct wlr_scene_rect *border_right;
+
     bool is_maximized;
     bool is_fullscreen;
     struct wlr_box saved_geometry;
@@ -53,10 +64,12 @@ struct IvyTopLevel {
 
 void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data);
 void Ivy_Server_HandleNewXwaylandSurface(struct wl_listener *listener, void *data);
+void Ivy_Server_HandleNewXdgDecoration(struct wl_listener *listener, void *data);
 void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
 
 void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize);
 void Ivy_TopLevel_SetFullscreen(IvyTopLevel *topLevel, bool fullscreen);
+void Ivy_TopLevel_UpdateBorders(IvyTopLevel *topLevel);
 
 #ifdef __cplusplus
 }

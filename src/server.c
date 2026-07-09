@@ -19,6 +19,7 @@
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/xwayland.h>
+#include <wlr/types/wlr_xdg_decoration_v1.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -149,6 +150,14 @@ void Ivy_Server_Init(IvyServer *server)
         IVY_CHECK(false, "[WARNING] Failed to create wlr_xwayland!");
     }
 
+    server->xdg_decoration_manager = wlr_xdg_decoration_manager_v1_create(server->wl_display);
+    if (server->xdg_decoration_manager != NULL) {
+        server->new_xdg_decoration.notify = Ivy_Server_HandleNewXdgDecoration;
+        wl_signal_add(&server->xdg_decoration_manager->events.new_toplevel_decoration, &server->new_xdg_decoration);
+    } else {
+        IVY_CHECK(false, "[WARNING] Failed to create wlr_xdg_decoration_manager_v1!");
+    }
+
     server->current_workspace = 1;
 }
 
@@ -185,6 +194,10 @@ void Ivy_Server_Destroy(IvyServer *server)
     if (server->xwayland != NULL) {
         wl_list_remove(&server->new_xwayland_surface.link);
         wlr_xwayland_destroy(server->xwayland);
+    }
+
+    if (server->xdg_decoration_manager != NULL) {
+        wl_list_remove(&server->new_xdg_decoration.link);
     }
 
     Ivy_Cursor_Destroy(server->cursor);

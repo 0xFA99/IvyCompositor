@@ -10,6 +10,8 @@
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/xwayland.h>
+#include <wlr/types/wlr_xdg_decoration_v1.h>
 
 #include <stdlib.h>
 
@@ -57,14 +59,23 @@ static void IvyTopLevel_HandleCommit(struct wl_listener *listener, void *data)
     IvyTopLevel *topLevel = wl_container_of(listener, topLevel, commit);
     (void)data;
 
-    if (topLevel->xdg_toplevel->base->initial_commit)
-        wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, 0, 0);
+    if (topLevel->type == IVY_TOPLEVEL_XDG) {
+        if (topLevel->xdg_toplevel->base->initial_commit)
+            wlr_xdg_toplevel_set_size(topLevel->xdg_toplevel, 0, 0);
+    }
+
+    Ivy_TopLevel_UpdateBorders(topLevel);
 }
 
 static void IvyTopLevel_HandleDestroy(struct wl_listener *listener, void *data)
 {
     IvyTopLevel *topLevel = wl_container_of(listener, topLevel, destroy);
     (void)data;
+
+    if (topLevel->xdg_decoration != NULL) {
+        wl_list_remove(&topLevel->decoration_request_mode.link);
+        wl_list_remove(&topLevel->decoration_destroy.link);
+    }
 
     wl_list_remove(&topLevel->map.link);
     wl_list_remove(&topLevel->unmap.link);
@@ -108,8 +119,12 @@ void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data)
     topLevel->server = server;
     topLevel->type = IVY_TOPLEVEL_XDG;
     topLevel->xdg_toplevel = xdg_topLevel;
-    topLevel->scene_tree = wlr_scene_xdg_surface_create(server->scene_toplevel, xdg_topLevel->base);
+
+    topLevel->scene_tree = wlr_scene_tree_create(server->scene_toplevel);
     IVY_CHECK(topLevel->scene_tree != NULL, "[WARNING] Failed to create scene tree for topLevel!");
+
+    struct wlr_scene_tree *xdg_scene_tree = wlr_scene_xdg_surface_create(topLevel->scene_tree, xdg_topLevel->base);
+    IVY_CHECK(xdg_scene_tree != NULL, "[WARNING] Failed to create XDG scene tree!");
 
     topLevel->scene_tree->node.data = topLevel;
     xdg_topLevel->base->data = topLevel->scene_tree;
@@ -117,6 +132,12 @@ void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data)
     topLevel->is_maximized = false;
     topLevel->is_fullscreen = false;
     topLevel->workspace = server->current_workspace;
+
+    topLevel->border_top = NULL;
+    topLevel->border_bottom = NULL;
+    topLevel->border_left = NULL;
+    topLevel->border_right = NULL;
+    topLevel->xdg_decoration = NULL;
 
     topLevel->map.notify = IvyTopLevel_HandleMap;
     wl_signal_add(&wlr_surface->events.map, &topLevel->map);
@@ -161,10 +182,17 @@ void Ivy_TopLevel_Focus(IvyTopLevel *topLevel)
         struct wlr_xdg_toplevel *prev_xdg = wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
         if (prev_xdg != NULL) {
             wlr_xdg_toplevel_set_activated(prev_xdg, false);
+            struct wlr_scene_tree *tree = prev_xdg->base->data;
+            if (tree && tree->node.data) {
+                Ivy_TopLevel_UpdateBorders(tree->node.data);
+            }
         }
         struct wlr_xwayland_surface *prev_xsurface = wlr_xwayland_surface_try_from_wlr_surface(prev_surface);
         if (prev_xsurface != NULL) {
             wlr_xwayland_surface_activate(prev_xsurface, false);
+            if (prev_xsurface->data) {
+                Ivy_TopLevel_UpdateBorders(prev_xsurface->data);
+            }
         }
     }
 
@@ -188,6 +216,8 @@ void Ivy_TopLevel_Focus(IvyTopLevel *topLevel)
 
     if (keyboard != NULL && surface != NULL)
         wlr_seat_keyboard_notify_enter(seat, surface, keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+
+    Ivy_TopLevel_UpdateBorders(topLevel);
 }
 
 void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize)
@@ -341,8 +371,11 @@ static void IvyTopLevel_XWayland_HandleAssociate(struct wl_listener *listener, v
         ? topLevel->server->scene_top
         : topLevel->server->scene_toplevel;
 
-    topLevel->scene_tree = wlr_scene_subsurface_tree_create(parent_tree, wlr_surface);
-    IVY_CHECK(topLevel->scene_tree != NULL, "[WARNING] Failed to create subsurface tree for XWayland surface!");
+    topLevel->scene_tree = wlr_scene_tree_create(parent_tree);
+    IVY_CHECK(topLevel->scene_tree != NULL, "[WARNING] Failed to create scene tree for XWayland topLevel!");
+
+    struct wlr_scene_tree *xwayland_tree = wlr_scene_subsurface_tree_create(topLevel->scene_tree, wlr_surface);
+    IVY_CHECK(xwayland_tree != NULL, "[WARNING] Failed to create XWayland subsurface tree!");
 
     topLevel->scene_tree->node.data = topLevel;
 
@@ -351,6 +384,9 @@ static void IvyTopLevel_XWayland_HandleAssociate(struct wl_listener *listener, v
 
     topLevel->unmap.notify = IvyTopLevel_HandleUnmap;
     wl_signal_add(&wlr_surface->events.unmap, &topLevel->unmap);
+
+    topLevel->commit.notify = IvyTopLevel_HandleCommit;
+    wl_signal_add(&wlr_surface->events.commit, &topLevel->commit);
 
     wlr_scene_node_set_position(&topLevel->scene_tree->node, xsurface->x, xsurface->y);
 }
@@ -361,6 +397,7 @@ static void IvyTopLevel_XWayland_HandleDissociate(struct wl_listener *listener, 
 
     wl_list_remove(&topLevel->map.link);
     wl_list_remove(&topLevel->unmap.link);
+    wl_list_remove(&topLevel->commit.link);
 
     if (topLevel->scene_tree) {
         wlr_scene_node_destroy(&topLevel->scene_tree->node);
@@ -441,6 +478,9 @@ static void IvyTopLevel_XWayland_HandleDestroy(struct wl_listener *listener, voi
     if (topLevel->unmap.link.next != NULL && topLevel->unmap.link.next != &topLevel->unmap.link) {
         wl_list_remove(&topLevel->unmap.link);
     }
+    if (topLevel->commit.link.next != NULL && topLevel->commit.link.next != &topLevel->commit.link) {
+        wl_list_remove(&topLevel->commit.link);
+    }
 
     free(topLevel);
 }
@@ -462,8 +502,15 @@ void Ivy_Server_HandleNewXwaylandSurface(struct wl_listener *listener, void *dat
     topLevel->is_fullscreen = false;
     topLevel->workspace = server->current_workspace;
 
+    topLevel->border_top = NULL;
+    topLevel->border_bottom = NULL;
+    topLevel->border_left = NULL;
+    topLevel->border_right = NULL;
+    topLevel->xdg_decoration = NULL;
+
     wl_list_init(&topLevel->map.link);
     wl_list_init(&topLevel->unmap.link);
+    wl_list_init(&topLevel->commit.link);
 
     topLevel->associate.notify = IvyTopLevel_XWayland_HandleAssociate;
     wl_signal_add(&xsurface->events.associate, &topLevel->associate);
@@ -491,4 +538,115 @@ void Ivy_Server_HandleNewXwaylandSurface(struct wl_listener *listener, void *dat
 
     topLevel->destroy.notify = IvyTopLevel_XWayland_HandleDestroy;
     wl_signal_add(&xsurface->events.destroy, &topLevel->destroy);
+}
+
+void Ivy_TopLevel_UpdateBorders(IvyTopLevel *topLevel)
+{
+    if (topLevel->scene_tree == NULL) return;
+
+    if (topLevel->is_fullscreen) {
+        if (topLevel->border_top) wlr_scene_node_set_enabled(&topLevel->border_top->node, false);
+        if (topLevel->border_bottom) wlr_scene_node_set_enabled(&topLevel->border_bottom->node, false);
+        if (topLevel->border_left) wlr_scene_node_set_enabled(&topLevel->border_left->node, false);
+        if (topLevel->border_right) wlr_scene_node_set_enabled(&topLevel->border_right->node, false);
+        return;
+    }
+
+    if (topLevel->border_top) wlr_scene_node_set_enabled(&topLevel->border_top->node, true);
+    if (topLevel->border_bottom) wlr_scene_node_set_enabled(&topLevel->border_bottom->node, true);
+    if (topLevel->border_left) wlr_scene_node_set_enabled(&topLevel->border_left->node, true);
+    if (topLevel->border_right) wlr_scene_node_set_enabled(&topLevel->border_right->node, true);
+
+    int width, height;
+    int offset_x = 0;
+    int offset_y = 0;
+
+    if (topLevel->type == IVY_TOPLEVEL_XDG) {
+        struct wlr_box geom = topLevel->xdg_toplevel->base->geometry;
+        width = geom.width;
+        height = geom.height;
+        offset_x = geom.x;
+        offset_y = geom.y;
+    } else {
+        width = topLevel->xwayland_surface->width;
+        height = topLevel->xwayland_surface->height;
+    }
+
+    int border_width = 4;
+    float border_color[4];
+
+    struct wlr_surface *focused_surface = topLevel->server->seat->keyboard_state.focused_surface;
+    struct wlr_surface *our_surface = (topLevel->type == IVY_TOPLEVEL_XDG)
+        ? topLevel->xdg_toplevel->base->surface
+        : topLevel->xwayland_surface->surface;
+
+    if (focused_surface == our_surface) {
+        border_color[0] = 0.2f; border_color[1] = 0.6f; border_color[2] = 0.9f; border_color[3] = 1.0f;
+    } else {
+        border_color[0] = 0.2f; border_color[1] = 0.2f; border_color[2] = 0.25f; border_color[3] = 1.0f;
+    }
+
+    if (topLevel->border_top == NULL) {
+        topLevel->border_top = wlr_scene_rect_create(topLevel->scene_tree, 1, 1, border_color);
+        topLevel->border_bottom = wlr_scene_rect_create(topLevel->scene_tree, 1, 1, border_color);
+        topLevel->border_left = wlr_scene_rect_create(topLevel->scene_tree, 1, 1, border_color);
+        topLevel->border_right = wlr_scene_rect_create(topLevel->scene_tree, 1, 1, border_color);
+
+        wlr_scene_node_lower_to_bottom(&topLevel->border_top->node);
+        wlr_scene_node_lower_to_bottom(&topLevel->border_bottom->node);
+        wlr_scene_node_lower_to_bottom(&topLevel->border_left->node);
+        wlr_scene_node_lower_to_bottom(&topLevel->border_right->node);
+    } else {
+        wlr_scene_rect_set_color(topLevel->border_top, border_color);
+        wlr_scene_rect_set_color(topLevel->border_bottom, border_color);
+        wlr_scene_rect_set_color(topLevel->border_left, border_color);
+        wlr_scene_rect_set_color(topLevel->border_right, border_color);
+    }
+
+    wlr_scene_rect_set_size(topLevel->border_top, width + 2 * border_width, border_width);
+    wlr_scene_node_set_position(&topLevel->border_top->node, offset_x - border_width, offset_y - border_width);
+
+    wlr_scene_rect_set_size(topLevel->border_bottom, width + 2 * border_width, border_width);
+    wlr_scene_node_set_position(&topLevel->border_bottom->node, offset_x - border_width, offset_y + height);
+
+    wlr_scene_rect_set_size(topLevel->border_left, border_width, height);
+    wlr_scene_node_set_position(&topLevel->border_left->node, offset_x - border_width, offset_y);
+
+    wlr_scene_rect_set_size(topLevel->border_right, border_width, height);
+    wlr_scene_node_set_position(&topLevel->border_right->node, offset_x + width, offset_y);
+}
+
+static void IvyTopLevel_HandleDecorationRequestMode(struct wl_listener *listener, void *data)
+{
+    IvyTopLevel *topLevel = wl_container_of(listener, topLevel, decoration_request_mode);
+    wlr_xdg_toplevel_decoration_v1_set_mode(topLevel->xdg_decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+}
+
+static void IvyTopLevel_HandleDecorationDestroy(struct wl_listener *listener, void *data)
+{
+    IvyTopLevel *topLevel = wl_container_of(listener, topLevel, decoration_destroy);
+    wl_list_remove(&topLevel->decoration_request_mode.link);
+    wl_list_remove(&topLevel->decoration_destroy.link);
+    topLevel->xdg_decoration = NULL;
+}
+
+void Ivy_Server_HandleNewXdgDecoration(struct wl_listener *listener, void *data)
+{
+    struct wlr_xdg_toplevel_decoration_v1 *decoration = data;
+
+    struct wlr_scene_tree *tree = decoration->toplevel->base->data;
+    if (tree == NULL) return;
+
+    IvyTopLevel *topLevel = tree->node.data;
+    if (topLevel == NULL) return;
+
+    topLevel->xdg_decoration = decoration;
+
+    topLevel->decoration_request_mode.notify = IvyTopLevel_HandleDecorationRequestMode;
+    wl_signal_add(&decoration->events.request_mode, &topLevel->decoration_request_mode);
+
+    topLevel->decoration_destroy.notify = IvyTopLevel_HandleDecorationDestroy;
+    wl_signal_add(&decoration->events.destroy, &topLevel->decoration_destroy);
+
+    wlr_xdg_toplevel_decoration_v1_set_mode(decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 }

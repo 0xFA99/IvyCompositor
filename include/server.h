@@ -46,6 +46,9 @@ struct IvyServer {
     struct wlr_xwayland             *xwayland;
     struct wl_listener              new_xwayland_surface;
 
+    struct wlr_xdg_decoration_manager_v1 *xdg_decoration_manager;
+    struct wl_listener              new_xdg_decoration;
+
     struct wlr_scene_tree           *scene_background;
     struct wlr_scene_tree           *scene_bottom;
     struct wlr_scene_tree           *scene_toplevel;
