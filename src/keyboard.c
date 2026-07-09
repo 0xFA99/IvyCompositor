@@ -111,6 +111,22 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
             }
             break;
 
+        case XKB_KEY_q:
+            if (server->seat->keyboard_state.focused_surface != NULL) {
+                struct wlr_surface *focused_surface = server->seat->keyboard_state.focused_surface;
+                
+                struct wlr_xdg_toplevel *xdg_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(focused_surface);
+                if (xdg_toplevel != NULL) {
+                    wlr_xdg_toplevel_send_close(xdg_toplevel);
+                } else {
+                    struct wlr_xwayland_surface *xsurface = wlr_xwayland_surface_try_from_wlr_surface(focused_surface);
+                    if (xsurface != NULL) {
+                        wlr_xwayland_surface_close(xsurface);
+                    }
+                }
+            }
+            break;
+
         default: return false;
     }
 

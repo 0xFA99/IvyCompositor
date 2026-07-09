@@ -16,10 +16,6 @@ enum IvyTopLevelType {
     IVY_TOPLEVEL_XWAYLAND,
 };
 
-struct wlr_xwayland_surface; // forward declaration
-struct wlr_xdg_toplevel_decoration_v1; // forward declaration
-struct wlr_scene_rect; // forward declaration
-
 struct IvyTopLevel {
     IvyServer *server;
     struct wl_list link;
@@ -29,6 +25,7 @@ struct IvyTopLevel {
         struct wlr_xwayland_surface *xwayland_surface;
     };
     struct wlr_scene_tree *scene_tree;
+    struct wlr_scene_tree *content_tree;
 
     struct wl_listener map;
     struct wl_listener unmap;
