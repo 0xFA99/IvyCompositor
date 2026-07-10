@@ -1,58 +1,28 @@
 #include "types.h"
 #include "server.h"
 #include "output.h"
+#include "top_level.h"
+#include "layer_surface.h"
 
+#include <wlr/xwayland.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_output.h>
-#include <wlr/types/wlr_output_layout.h>
-#include <wlr/types/wlr_layer_shell_v1.h>
-#include <wlr/xwayland.h>
 #include <wlr/types/wlr_xdg_shell.h>
-#include "layer_surface.h"
-#include "top_level.h"
+#include <wlr/types/wlr_output_layout.h>
 
 #include <stdlib.h>
 #include <time.h>
 
-static void IvyOutput_HandleFrame(struct wl_listener *listener, void *data)
-{
-    IvyOutput *output = wl_container_of(listener, output, frame);
-    (void)data;
-
-    struct wlr_scene_output *scene_output = wlr_scene_get_scene_output(output->server->scene, output->wlr_output);
-    wlr_scene_output_commit(scene_output, NULL);
-
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    wlr_scene_output_send_frame_done(scene_output, &now);
-}
-
-static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *data)
-{
-    IvyOutput *output = wl_container_of(listener, output, request_state);
-    const struct wlr_output_event_request_state *event = data;
-
-    wlr_output_commit_state(output->wlr_output, event->state);
-}
-
-static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data)
-{
-    IvyOutput *output = wl_container_of(listener, output, destroy);
-    (void)data;
-
-    wl_list_remove(&output->frame.link);
-    wl_list_remove(&output->request_state.link);
-    wl_list_remove(&output->destroy.link);
-    wl_list_remove(&output->link);
-
-    free(output);
-}
+static void IvyOutput_HandleFrame(struct wl_listener *restrict listener, void *restrict data);
+static void IvyOutput_HandleRequestState(struct wl_listener *restrict listener, void *restrict data);
+static void IvyOutput_HandleDestroy(struct wl_listener *restrict listener, void *restrict data);
 
 void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data)
 {
     IvyServer *server = wl_container_of(listener, server, new_output);
     struct wlr_output *wlr_output = data;
 
+    // Init Renderer Output
     wlr_output_init_render(wlr_output, server->allocator, server->renderer);
 
     struct wlr_output_state state;
@@ -128,8 +98,7 @@ void Ivy_Output_ArrangeLayers(IvyOutput *output)
                 center_y = topLevel->scene_tree->node.y + topLevel->xwayland_surface->height * 0.5;
             }
 
-            struct wlr_output *wlr_output = wlr_output_layout_output_at(
-                server->output_layout, center_x, center_y);
+            struct wlr_output *wlr_output = wlr_output_layout_output_at(server->output_layout, center_x, center_y);
             
             if (wlr_output == output->wlr_output) {
                 wlr_scene_node_set_position(&topLevel->scene_tree->node, output->usable_area.x, output->usable_area.y);
@@ -144,3 +113,40 @@ void Ivy_Output_ArrangeLayers(IvyOutput *output)
         }
     }
 }
+
+static void IvyOutput_HandleFrame(struct wl_listener *restrict listener, void *restrict data)
+{
+    IvyOutput *output = wl_container_of(listener, output, frame);
+    (void)data;
+
+    struct wlr_scene_output *scene_output = wlr_scene_get_scene_output(output->server->scene, output->wlr_output);
+    if (!scene_output) return;
+
+    wlr_scene_output_commit(scene_output, NULL);
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    wlr_scene_output_send_frame_done(scene_output, &now);
+}
+
+static void IvyOutput_HandleRequestState(struct wl_listener *restrict listener, void *restrict data)
+{
+    IvyOutput *output = wl_container_of(listener, output, request_state);
+    const struct wlr_output_event_request_state *event = data;
+
+    wlr_output_commit_state(output->wlr_output, event->state);
+}
+
+static void IvyOutput_HandleDestroy(struct wl_listener *restrict listener, void *restrict data)
+{
+    IvyOutput *output = wl_container_of(listener, output, destroy);
+    (void)data;
+
+    wl_list_remove(&output->frame.link);
+    wl_list_remove(&output->request_state.link);
+    wl_list_remove(&output->destroy.link);
+    wl_list_remove(&output->link);
+
+    free(output);
+}
+

@@ -142,7 +142,7 @@ void Ivy_Server_Init(IvyServer *server)
 
     server->xwayland = wlr_xwayland_create(server->wl_display, compositor, true);
     if (server->xwayland != NULL) {
-        server->new_xwayland_surface.notify = Ivy_Server_HandleNewXwaylandSurface;
+        server->new_xwayland_surface.notify = Ivy_Server_HandleNewXWaylandSurface;
         wl_signal_add(&server->xwayland->events.new_surface, &server->new_xwayland_surface);
         wlr_xwayland_set_seat(server->xwayland, server->seat);
         setenv("DISPLAY", server->xwayland->display_name, true);

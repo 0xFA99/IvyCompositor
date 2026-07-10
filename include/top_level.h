@@ -60,10 +60,10 @@ struct IvyTopLevel {
 };
 
 void Ivy_Server_HandleNewXdgTopLevel(struct wl_listener *listener, void *data);
-void Ivy_Server_HandleNewXwaylandSurface(struct wl_listener *listener, void *data);
+void Ivy_Server_HandleNewXWaylandSurface(struct wl_listener *listener, void *data);
 void Ivy_Server_HandleNewXdgDecoration(struct wl_listener *listener, void *data);
-void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
 
+void Ivy_TopLevel_Focus(IvyTopLevel *topLevel);
 void Ivy_TopLevel_SetMaximize(IvyTopLevel *topLevel, bool maximize);
 void Ivy_TopLevel_SetFullscreen(IvyTopLevel *topLevel, bool fullscreen);
 void Ivy_TopLevel_UpdateBorders(IvyTopLevel *topLevel);
