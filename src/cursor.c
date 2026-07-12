@@ -9,6 +9,7 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/types/wlr_idle_notify_v1.h>
 
 #include <stdlib.h>
 
@@ -272,6 +273,8 @@ static void IvyCursor_HandleMotion(struct wl_listener *restrict listener, void *
 
     wlr_cursor_move(cursor->wlr_cursor, &event->pointer->base, event->delta_x, event->delta_y);
     IvyCursor_ProcessCursorMotion(cursor, event->time_msec);
+
+    wlr_idle_notifier_v1_notify_activity(cursor->server->idle_notifier, cursor->server->seat);
 }
 
 static void IvyCursor_HandleMotionAbsolute(struct wl_listener *restrict listener, void *restrict data)
@@ -281,6 +284,8 @@ static void IvyCursor_HandleMotionAbsolute(struct wl_listener *restrict listener
 
     wlr_cursor_warp_absolute(cursor->wlr_cursor, &event->pointer->base, event->x, event->y);
     IvyCursor_ProcessCursorMotion(cursor, event->time_msec);
+
+    wlr_idle_notifier_v1_notify_activity(cursor->server->idle_notifier, cursor->server->seat);
 }
 
 static void IvyCursor_HandleAxis(struct wl_listener *restrict listener, void *restrict data)
@@ -292,6 +297,8 @@ static void IvyCursor_HandleAxis(struct wl_listener *restrict listener, void *re
         cursor->server->seat, event->time_msec, event->orientation,
         event->delta, event->delta_discrete, event->source,
         event->relative_direction);
+
+    wlr_idle_notifier_v1_notify_activity(cursor->server->idle_notifier, cursor->server->seat);
 }
 
 static void IvyCursor_HandleFrame(struct wl_listener *restrict listener, void *restrict data)
@@ -308,6 +315,8 @@ static void IvyCursor_HandleButton(struct wl_listener *restrict listener, void *
     struct wlr_pointer_button_event *event = data;
 
     wlr_seat_pointer_notify_button(cursor->server->seat, event->time_msec, event->button, event->state);
+
+    wlr_idle_notifier_v1_notify_activity(cursor->server->idle_notifier, cursor->server->seat);
 
     if (event->state == WL_POINTER_BUTTON_STATE_RELEASED) {
         if (cursor->mode != IVY_CURSOR_PASSTHROUGH) {

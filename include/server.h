@@ -49,6 +49,13 @@ struct IvyServer {
     struct wlr_xdg_decoration_manager_v1 *xdg_decoration_manager;
     struct wl_listener              new_xdg_decoration;
 
+    struct wlr_idle_notifier_v1         *idle_notifier;
+    struct wlr_idle_inhibit_manager_v1  *idle_inhibit_manager;
+    struct wl_listener                  new_idle_inhabitor;
+
+    struct wlr_output_power_manager_v1  *output_power_manager;
+    struct wl_listener                  output_power_set_mode;
+
     struct wlr_scene_tree           *scene_background;
     struct wlr_scene_tree           *scene_bottom;
     struct wlr_scene_tree           *scene_toplevel;

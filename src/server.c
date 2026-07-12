@@ -8,6 +8,7 @@
 #include "layer_surface.h"
 
 #include <wlr/backend.h>
+#include <wlr/xwayland.h>
 #include <wlr/render/allocator.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
@@ -18,8 +19,11 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
-#include <wlr/xwayland.h>
 #include <wlr/types/wlr_xdg_decoration_v1.h>
+#include <wlr/types/wlr_output.h>
+#include <wlr/types/wlr_idle_inhibit_v1.h>
+#include <wlr/types/wlr_idle_notify_v1.h>
+#include <wlr/types/wlr_output_power_management_v1.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,6 +31,11 @@
 #define IVY_XDG_SHELL_VERSION 6
 
 static const float TEST_BACKGROUND_COLOR[4] = { 0.1f, 0.1f, 0.15f, 1.0f };
+
+typedef struct {
+    struct wl_listener destroy;
+    IvyServer *server;
+} IvyIdleInhibitor;
 
 static void IvyServer_SeatRequestCursor(struct wl_listener *listener, void *data)
 {
@@ -53,6 +62,51 @@ static void IvyServer_SeatRequestSetSelection(struct wl_listener *listener, void
     struct wlr_seat_request_set_selection_event *event = data;
 
     wlr_seat_set_selection(server->seat, event->source, event->serial);
+}
+
+static void IvyServer_UpdateIdleInhibited(IvyServer *server)
+{
+    const bool inhibited = !wl_list_empty(&server->idle_inhibit_manager->inhibitors);
+    wlr_idle_notifier_v1_set_inhibited(server->idle_notifier, inhibited);
+}
+
+static void IvyServer_HandleIdleInhibitorDestroy(struct wl_listener *listener, void *data)
+{
+    IvyIdleInhibitor *inhibitor = wl_container_of(listener, inhibitor, destroy);
+    IvyServer *server = inhibitor->server;
+
+    wl_list_remove(&inhibitor->destroy.link);
+    free(inhibitor);
+
+    IvyServer_UpdateIdleInhibited(server);
+}
+
+static void IvyServer_HandleNewIdleInhibitor(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, new_idle_inhabitor);
+    struct wlr_idle_inhibitor_v1 *wlr_inhibitor = data;
+
+    IvyIdleInhibitor *inhibitor = calloc(1, sizeof(IvyIdleInhibitor));
+    inhibitor->server = server;
+    inhibitor->destroy.notify = IvyServer_HandleIdleInhibitorDestroy;
+    wl_signal_add(&wlr_inhibitor->events.destroy, &inhibitor->destroy);
+
+    IvyServer_UpdateIdleInhibited(server);
+}
+
+static void IvyServer_HandleOutputPowerSetMode(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, output_power_set_mode);
+    struct wlr_output_power_v1_set_mode_event *event = data;
+
+    struct wlr_output_state state;
+    wlr_output_state_init(&state);
+
+    const bool enable = (event->mode == ZWLR_OUTPUT_POWER_V1_MODE_ON);
+    wlr_output_state_set_enabled(&state, enable);
+
+    wlr_output_commit_state(event->output, &state);
+    wlr_output_state_finish(&state);
 }
 
 void Ivy_Server_Init(IvyServer *server)
@@ -158,6 +212,25 @@ void Ivy_Server_Init(IvyServer *server)
         IVY_CHECK(false, "[WARNING] Failed to create wlr_xdg_decoration_manager_v1!");
     }
 
+    server->idle_notifier = wlr_idle_notifier_v1_create(server->wl_display);
+    IVY_CHECK(server->idle_notifier != NULL, "[WARNING] Failed to create wlr_idle_notifier_v1");
+
+    server->idle_inhibit_manager = wlr_idle_inhibit_v1_create(server->wl_display);
+    if (server->idle_inhibit_manager != NULL) {
+        server->new_idle_inhabitor.notify = IvyServer_HandleNewIdleInhibitor;
+        wl_signal_add(&server->idle_inhibit_manager->events.new_inhibitor, &server->new_idle_inhabitor);
+    } else {
+        IVY_CHECK(false, "[WARNING] Failed to create wlr_idle_inhibit_manager_v1");
+    }
+
+    server->output_power_manager = wlr_output_power_manager_v1_create(server->wl_display);
+    if (server->output_power_manager != NULL) {
+        server->output_power_set_mode.notify = IvyServer_HandleOutputPowerSetMode;
+        wl_signal_add(&server->output_power_manager->events.set_mode, &server->output_power_set_mode);
+    } else {
+        IVY_CHECK(false, "[WARNING] Failed to create wlr_output_power_manager_v1");
+    }
+
     server->current_workspace = 1;
 }
 
@@ -199,6 +272,9 @@ void Ivy_Server_Destroy(IvyServer *server)
     if (server->xdg_decoration_manager != NULL) {
         wl_list_remove(&server->new_xdg_decoration.link);
     }
+
+    if (server->idle_inhibit_manager != NULL) wl_list_remove(&server->new_idle_inhabitor.link);
+    if (server->output_power_manager != NULL) wl_list_remove(&server->output_power_set_mode.link);
 
     Ivy_Cursor_Destroy(server->cursor);
 

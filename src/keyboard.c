@@ -8,6 +8,7 @@
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_idle_notify_v1.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
@@ -114,7 +115,7 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
 
         case XKB_KEY_t:
             if (fork() == 0) {
-                execlp("thunar", "thunar", NULL);
+                execlp("swaylock", "swaylock", NULL);
                 _exit(1);
             }
             break;
@@ -175,6 +176,8 @@ static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
 
     bool handled = false;
     u32 modifiers = wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
+
+    wlr_idle_notifier_v1_notify_activity(keyboard->server->idle_notifier, keyboard->server->seat);
 
     if (modifiers & WLR_MODIFIER_ALT && event->state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
