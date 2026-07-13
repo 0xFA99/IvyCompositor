@@ -56,6 +56,9 @@ struct IvyServer {
     struct wlr_output_power_manager_v1  *output_power_manager;
     struct wl_listener                  output_power_set_mode;
 
+    struct wlr_xdg_activation_v1        *xdg_activation;
+    struct wl_listener                  request_activate;
+
     struct wlr_scene_tree           *scene_background;
     struct wlr_scene_tree           *scene_bottom;
     struct wlr_scene_tree           *scene_toplevel;

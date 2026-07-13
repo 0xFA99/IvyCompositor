@@ -113,6 +113,13 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
             Ivy_TopLevel_Focus(next_topLevel);
             break;
 
+        case XKB_KEY_d:
+            if (fork() == 0) {
+                execlp("wmenu-run", "wmenu-run", NULL);
+                _exit(1);
+            }
+            break;
+
         case XKB_KEY_t:
             if (fork() == 0) {
                 execlp("swaylock", "swaylock", NULL);

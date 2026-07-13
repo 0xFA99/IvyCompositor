@@ -562,7 +562,9 @@ static void IvyTopLevel_HandleDecorationRequestMode(struct wl_listener *listener
     IvyTopLevel *topLevel = wl_container_of(listener, topLevel, decoration_request_mode);
     (void)data;
 
-    wlr_xdg_toplevel_decoration_v1_set_mode(topLevel->xdg_decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    if (topLevel->xdg_decoration != NULL && topLevel->xdg_decoration->toplevel->base->initialized) {
+        wlr_xdg_toplevel_decoration_v1_set_mode(topLevel->xdg_decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
 }
 
 static void IvyTopLevel_HandleDecorationDestroy(struct wl_listener *listener, void *data)
@@ -594,7 +596,9 @@ void Ivy_Server_HandleNewXdgDecoration(struct wl_listener *listener, void *data)
     topLevel->decoration_destroy.notify = IvyTopLevel_HandleDecorationDestroy;
     wl_signal_add(&decoration->events.destroy, &topLevel->decoration_destroy);
 
-    wlr_xdg_toplevel_decoration_v1_set_mode(decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    if (decoration->toplevel->base->initialized) {
+        wlr_xdg_toplevel_decoration_v1_set_mode(decoration, WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
 }
 
 static void IvyTopLevel_HandleRequestMaximize(struct wl_listener *listener, void *data)

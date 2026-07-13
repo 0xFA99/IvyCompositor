@@ -24,6 +24,7 @@
 #include <wlr/types/wlr_idle_inhibit_v1.h>
 #include <wlr/types/wlr_idle_notify_v1.h>
 #include <wlr/types/wlr_output_power_management_v1.h>
+#include <wlr/types/wlr_xdg_activation_v1.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -107,6 +108,28 @@ static void IvyServer_HandleOutputPowerSetMode(struct wl_listener *listener, voi
 
     wlr_output_commit_state(event->output, &state);
     wlr_output_state_finish(&state);
+}
+
+static void IvyServer_HandleRequestActivate(struct wl_listener *listener, void *data)
+{
+    IvyServer *server = wl_container_of(listener, server, request_activate);
+    struct wlr_xdg_activation_v1_request_activate_event *event = data;
+
+    IvyTopLevel *topLevel = NULL;
+    IvyTopLevel *iter;
+    wl_list_for_each(iter, &server->topLevels, link) {
+        struct wlr_surface *surface = (iter->type == IVY_TOPLEVEL_XDG)
+            ? iter->xdg_toplevel->base->surface
+            : iter->xwayland_surface->surface;
+        if (surface == event->surface) {
+            topLevel = iter;
+            break;
+        }
+    }
+
+    if (topLevel != NULL) {
+        Ivy_TopLevel_Focus(topLevel);
+    }
 }
 
 void Ivy_Server_Init(IvyServer *server)
@@ -231,6 +254,14 @@ void Ivy_Server_Init(IvyServer *server)
         IVY_CHECK(false, "[WARNING] Failed to create wlr_output_power_manager_v1");
     }
 
+    server->xdg_activation = wlr_xdg_activation_v1_create(server->wl_display);
+    if (server->xdg_activation != NULL) {
+        server->request_activate.notify = IvyServer_HandleRequestActivate;
+        wl_signal_add(&server->xdg_activation->events.request_activate, &server->request_activate);
+    } else {
+        IVY_CHECK(false, "[WARNING] Failed to create wlr_xdg_activation_v1");
+    }
+
     server->current_workspace = 1;
 }
 
@@ -271,6 +302,10 @@ void Ivy_Server_Destroy(IvyServer *server)
 
     if (server->xdg_decoration_manager != NULL) {
         wl_list_remove(&server->new_xdg_decoration.link);
+    }
+
+    if (server->xdg_activation != NULL) {
+        wl_list_remove(&server->request_activate.link);
     }
 
     if (server->idle_inhibit_manager != NULL) wl_list_remove(&server->new_idle_inhabitor.link);

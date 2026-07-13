@@ -2,8 +2,11 @@
 #include "server.h"
 #include "output.h"
 #include "layer_surface.h"
+#include "top_level.h"
 
 #include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 
@@ -15,6 +18,16 @@ static void IvyLayerSurface_HandleMap(struct wl_listener *listener, void *data)
     (void)data;
 
     wlr_scene_node_set_enabled(&layer_surface->scene_layer_surface->tree->node, true);
+
+    struct wlr_layer_surface_v1 *wlr_layer_surface = layer_surface->wlr_layer_surface;
+    if (wlr_layer_surface->current.keyboard_interactive != ZWLR_LAYER_SURFACE_V1_KEYBOARD_INTERACTIVITY_NONE) {
+        struct wlr_seat *seat = layer_surface->server->seat;
+        struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(seat);
+        if (keyboard != NULL) {
+            wlr_seat_keyboard_notify_enter(seat, wlr_layer_surface->surface,
+                keyboard->keycodes, keyboard->num_keycodes, &keyboard->modifiers);
+        }
+    }
 }
 
 static void IvyLayerSurface_HandleUnmap(struct wl_listener *listener, void *data)
@@ -23,6 +36,16 @@ static void IvyLayerSurface_HandleUnmap(struct wl_listener *listener, void *data
     (void)data;
 
     wlr_scene_node_set_enabled(&layer_surface->scene_layer_surface->tree->node, false);
+
+    struct wlr_seat *seat = layer_surface->server->seat;
+    if (seat->keyboard_state.focused_surface == layer_surface->wlr_layer_surface->surface) {
+        wlr_seat_keyboard_clear_focus(seat);
+
+        if (!wl_list_empty(&layer_surface->server->topLevels)) {
+            IvyTopLevel *top = wl_container_of(layer_surface->server->topLevels.next, top, link);
+            Ivy_TopLevel_Focus(top);
+        }
+    }
 }
 
 static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *data)
