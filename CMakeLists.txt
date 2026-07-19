@@ -43,7 +43,12 @@ add_executable(${PROJECT_NAME}
         src/main.c
         src/server.c
         src/output.c
-        src/top_level.c
+
+        src/top_level/common.c
+        src/top_level/xdg.c
+        src/top_level/xwayland.c
+        src/top_level/decoration.c
+
         src/input.c
         src/keyboard.c
         src/cursor.c

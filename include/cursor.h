@@ -2,6 +2,7 @@
 #define IVY_CURSOR_H
 
 #include "fwd.h"
+#include "types.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_input_device.h>
