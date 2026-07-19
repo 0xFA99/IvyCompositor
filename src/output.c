@@ -60,10 +60,13 @@ void Ivy_Server_HandleNewOutput(struct wl_listener *listener, void *data)
 
     wlr_scene_output_layout_add_output(server->scene_layout, layout_output, scene_output);
 
+    int width, height;
+    wlr_output_effective_resolution(wlr_output, &width, &height);
+
     output->usable_area.x = layout_output->x;
     output->usable_area.y = layout_output->y;
-    output->usable_area.width = wlr_output->width;
-    output->usable_area.height = wlr_output->height;
+    output->usable_area.width = width;
+    output->usable_area.height = height;
 }
 
 void Ivy_Output_ArrangeLayers(IvyOutput *output)

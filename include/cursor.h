@@ -39,6 +39,7 @@ struct IvyCursor {
 
 IvyCursor *Ivy_Cursor_Create(IvyServer *server);
 void Ivy_Cursor_Destroy(IvyCursor *cursor);
+void Ivy_Cursor_UpdateFocus(IvyCursor *cursor);
 
 void Ivy_Server_NewPointer(IvyServer *server, struct wlr_input_device *device);
 

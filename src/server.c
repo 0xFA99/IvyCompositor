@@ -4,6 +4,7 @@
 #include "output.h"
 #include "top_level.h"
 #include "cursor.h"
+#include "keyboard.h"
 #include "popup.h"
 #include "layer_surface.h"
 
@@ -118,9 +119,8 @@ static void IvyServer_HandleRequestActivate(struct wl_listener *listener, void *
     IvyTopLevel *topLevel = NULL;
     IvyTopLevel *iter;
     wl_list_for_each(iter, &server->topLevels, link) {
-        struct wlr_surface *surface = (iter->type == IVY_TOPLEVEL_XDG)
-            ? iter->xdg_toplevel->base->surface
-            : iter->xwayland_surface->surface;
+        struct wlr_surface *surface = (iter->type == IVY_TOPLEVEL_XDG) ? iter->xdg_toplevel->base->surface
+                                                                       : iter->xwayland_surface->surface;
         if (surface == event->surface) {
             topLevel = iter;
             break;
@@ -313,6 +313,24 @@ void Ivy_Server_Destroy(IvyServer *server)
 
     Ivy_Cursor_Destroy(server->cursor);
 
+    IvyKeyboard *keyboard, *kbd;
+    wl_list_for_each_safe(keyboard, kbd, &server->keyboards, link)
+    {
+        wl_list_remove(&keyboard->modifiers.link);
+        wl_list_remove(&keyboard->key.link);
+        wl_list_remove(&keyboard->destroy.link);
+        wl_list_remove(&keyboard->link);
+    }
+
+    IvyTopLevel *topLevel, *tl;
+    wl_list_for_each_safe(topLevel, tl, &server->topLevels, link)
+    {
+        if (topLevel->scene_tree) wlr_scene_node_destroy(&topLevel->scene_tree->node);
+        wl_list_remove(&topLevel->link);
+
+        free(topLevel);
+    }
+
     wlr_scene_node_destroy(&server->scene->tree.node);
     wlr_allocator_destroy(server->allocator);
     wlr_renderer_destroy(server->renderer);
@@ -350,6 +368,8 @@ void Ivy_Server_SwitchWorkspace(IvyServer *server, int workspace)
         wlr_seat_pointer_clear_focus(server->seat);
         wlr_seat_keyboard_clear_focus(server->seat);
     }
+
+    Ivy_Cursor_UpdateFocus(server->cursor);
 }
 
 void Ivy_TopLevel_MoveToWorkspace(IvyTopLevel *topLevel, int workspace)

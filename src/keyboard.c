@@ -107,10 +107,31 @@ static bool IvyServer_HandleKeybinding(IvyServer *server, xkb_keysym_t sym, u32 
             break;
 
         case XKB_KEY_F1:
-            if (wl_list_length(&server->topLevels) < 2) break;
+            if (wl_list_empty(&server->topLevels)) break;
 
-            IvyTopLevel *next_topLevel = wl_container_of(server->topLevels.prev, next_topLevel, link);
-            Ivy_TopLevel_Focus(next_topLevel);
+            const IvyTopLevel *focused_top = IvyKeyboard_GetFocusedTopLevel(server);
+            IvyTopLevel *next_focus = NULL;
+
+            // Circular loop focus window in workspace
+            const struct wl_list *start_link = focused_top ? &focused_top->link : &server->topLevels;
+            struct wl_list *element = start_link->next;
+
+            while (element != start_link) {
+                if (element == &server->topLevels) {
+                    element = element->next;
+                    if (element == start_link) break;
+                }
+
+                IvyTopLevel *t = wl_container_of(element, t, link);
+                if (t->workspace == server->current_workspace) {
+                    next_focus = t;
+                    break;
+                }
+
+                element = element->next;
+            }
+
+            if (next_focus != NULL) Ivy_TopLevel_Focus(next_focus);
             break;
 
         case XKB_KEY_d:

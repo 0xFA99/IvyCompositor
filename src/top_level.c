@@ -83,7 +83,7 @@ static void IvyTopLevel_SetBordersEnabled(IvyTopLevel *topLevel, bool enabled)
     }
 }
 
-static void IvyTopLevel_SaveGeometry(IvyTopLevel *topLevel, int width, int height)
+static void IvyTopLevel_SaveGeometry(IvyTopLevel *topLevel, const int width, const int height)
 {
     topLevel->saved_geometry.x = topLevel->scene_tree->node.x;
     topLevel->saved_geometry.y = topLevel->scene_tree->node.y;
@@ -371,7 +371,9 @@ void Ivy_TopLevel_UpdateBorders(IvyTopLevel *topLevel)
     struct wlr_surface *surface = (topLevel->type == IVY_TOPLEVEL_XDG)  ? topLevel->xdg_toplevel->base->surface
                                                                         : topLevel->xwayland_surface->surface;
 
-    if (surface == NULL || !surface->mapped || topLevel->is_fullscreen) {
+    bool is_or = (topLevel->type == IVY_TOPLEVEL_XWAYLAND && topLevel->xwayland_surface->override_redirect);
+
+    if (surface == NULL || !surface->mapped || topLevel->is_fullscreen || is_or || topLevel->is_maximized) {
         IvyTopLevel_SetBordersEnabled(topLevel, false);
         return;
     }
@@ -637,7 +639,30 @@ static void IvyTopLevel_HandleUnmap(struct wl_listener *listener, void *data)
 
     bool is_or = (topLevel->type == IVY_TOPLEVEL_XWAYLAND && topLevel->xwayland_surface->override_redirect);
 
-    if (!is_or) wl_list_remove(&topLevel->link);
+    if (!is_or)
+    {
+        struct wlr_surface *focused_surface = topLevel->server->seat->keyboard_state.focused_surface;
+        struct wlr_surface *surface = (topLevel->type == IVY_TOPLEVEL_XDG) ? topLevel->xdg_toplevel->base->surface
+                                                                           : topLevel->xwayland_surface->surface;
+
+        wl_list_remove(&topLevel->link);
+
+        if (focused_surface == surface) {
+            wlr_seat_keyboard_clear_focus(topLevel->server->seat);
+
+            IvyTopLevel *next_focus = NULL;
+            IvyTopLevel *tmp;
+
+            wl_list_for_each(tmp, &topLevel->server->topLevels, link) {
+                if (tmp->workspace == topLevel->server->current_workspace) {
+                    next_focus = tmp;
+                    break;
+                }
+            }
+
+            if (next_focus != NULL) Ivy_TopLevel_Focus(next_focus);
+        }
+    }
 }
 
 static void IvyTopLevel_HandleCommit(struct wl_listener *listener, void *data)

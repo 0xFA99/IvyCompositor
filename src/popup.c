@@ -1,10 +1,12 @@
 #include "fwd.h"
+#include "layer_surface.h"
 #include "server.h"
 #include "types.h"
 #include "popup.h"
 
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 
 #include <stdlib.h>
 

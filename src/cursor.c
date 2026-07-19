@@ -10,6 +10,8 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_idle_notify_v1.h>
+#include <linux/input-event-codes.h>
+#include <wlr/types/wlr_keyboard.h>
 
 #include <stdlib.h>
 
@@ -130,11 +132,6 @@ void Ivy_Cursor_ResetImage(IvyCursor *cursor)
 
 void Ivy_Cursor_BeginInteraction(IvyCursor *cursor, IvyTopLevel *topLevel, IvyCursorMode mode, u32 edges)
 {
-    const struct wlr_surface *focused_surface = cursor->server->seat->pointer_state.focused_surface;
-    struct wlr_surface *surface = (topLevel->type == IVY_TOPLEVEL_XDG)  ? topLevel->xdg_toplevel->base->surface
-                                                                        : topLevel->xwayland_surface->surface;
-    if (surface != focused_surface) return;
-
     if (cursor->mode != IVY_CURSOR_PASSTHROUGH)
         wl_list_remove(&cursor->grab_destroy.link);
 
@@ -172,6 +169,15 @@ void Ivy_Cursor_BeginInteraction(IvyCursor *cursor, IvyTopLevel *topLevel, IvyCu
     wl_signal_add(destroy_signal, &cursor->grab_destroy);
 
     IvyCursor_SetModeImage(cursor, mode, edges);
+}
+
+void Ivy_Cursor_UpdateFocus(IvyCursor *cursor)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    const u32 time = now.tv_sec * 1000 + now.tv_nsec / 1000000;
+
+    IvyCursor_ProcessCursorPassthrough(cursor, time);
 }
 
 static void IvyCursor_ProcessCursorMotion(IvyCursor *cursor, const u32 time)
@@ -330,7 +336,48 @@ static void IvyCursor_HandleButton(struct wl_listener *restrict listener, void *
         struct wlr_surface *surface = NULL;
 
         IvyTopLevel *topLevel = Ivy_Desktop_TopLevelAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
-        if (topLevel) Ivy_TopLevel_Focus(topLevel);
+        if (topLevel) {
+            Ivy_TopLevel_Focus(topLevel);
+
+            struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(cursor->server->seat);
+            uint32_t modifiers = keyboard ? wlr_keyboard_get_modifiers(keyboard) : 0;
+            if (modifiers & WLR_MODIFIER_ALT) {
+                if (event->button == BTN_LEFT) {
+                    Ivy_Cursor_BeginInteraction(cursor, topLevel, IVY_CURSOR_MOVE, 0);
+                } else if (event->button == BTN_RIGHT) {
+                    uint32_t edges = 0;
+                    int width, height;
+                    if (topLevel->type == IVY_TOPLEVEL_XDG) {
+                        width = topLevel->xdg_toplevel->base->current.geometry.width;
+                        height = topLevel->xdg_toplevel->base->current.geometry.height;
+                    } else {
+                        width = topLevel->xwayland_surface->width;
+                        height = topLevel->xwayland_surface->height;
+                    }
+
+                    double rx = cursor->wlr_cursor->x - topLevel->scene_tree->node.x;
+                    double ry = cursor->wlr_cursor->y - topLevel->scene_tree->node.y;
+
+                    if (rx < width / 3) {
+                        edges |= WLR_EDGE_LEFT;
+                    } else if (rx > 2 * width / 3) {
+                        edges |= WLR_EDGE_RIGHT;
+                    }
+
+                    if (ry < height / 3) {
+                        edges |= WLR_EDGE_TOP;
+                    } else if (ry > 2 * height / 3) {
+                        edges |= WLR_EDGE_BOTTOM;
+                    }
+
+                    if (edges == 0) {
+                        edges = WLR_EDGE_BOTTOM | WLR_EDGE_RIGHT;
+                    }
+
+                    Ivy_Cursor_BeginInteraction(cursor, topLevel, IVY_CURSOR_RESIZE, edges);
+                }
+            }
+        }
     }
 }
 
