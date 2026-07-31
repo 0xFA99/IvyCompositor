@@ -1,0 +1,29 @@
+#ifndef IVY_CORE_XDG_SHELL_H
+#define IVY_CORE_XDG_SHELL_H
+
+#include "core/fwd.h"
+#include "shell/xdg_toplevel.h"
+#include "shell/xdg_popup.h"
+
+#include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct IvyXdgShell {
+    struct wlr_xdg_shell *wlr_xdg_shell;
+    struct wlr_layer_shell_v1 *wlr_layer_shell_v1;
+
+    IvyXdgTopLevelManager xdg_toplevel_manager;
+    IvyXdgPopupManager xdg_popup_manager;
+};
+
+void Ivy_XdgShell_Init(IvyXdgShell *xdg_shell);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

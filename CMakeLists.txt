@@ -41,19 +41,19 @@ execute_process(
 
 add_executable(${PROJECT_NAME}
         src/main.c
-        src/server.c
-        src/output.c
 
-        src/top_level/common.c
-        src/top_level/xdg.c
-        src/top_level/xwayland.c
-        src/top_level/decoration.c
+        src/core/server.c
+        src/core/output.c
 
-        src/input.c
-        src/keyboard.c
-        src/cursor.c
-        src/popup.c
-        src/layer_surface.c
+        src/input/seat.c
+        src/input/cursor.c
+        src/input/keyboard.c
+
+        src/shell/layer_shell.c
+        src/shell/xdg_shell.c
+        src/shell/xdg_toplevel.c
+        src/shell/xdg_popup.c
+
         ${PROTOCOL_HEADERS}
 )
 
