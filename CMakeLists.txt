@@ -48,6 +48,7 @@ add_executable(${PROJECT_NAME}
         src/input/seat.c
         src/input/cursor.c
         src/input/keyboard.c
+        src/input/idle_inhibitor.c
 
         src/shell/layer_shell.c
         src/shell/xdg_shell.c

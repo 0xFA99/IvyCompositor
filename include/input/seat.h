@@ -16,13 +16,15 @@ struct IvySeat {
     struct wl_listener new_input;
 
     IvyKeyboardManager keyboard_manager;
-    IvyKeyboard *keyboard;
+    IvyKeyboard *keyboard;  // current keyboard
     IvyCursor cursor;
 };
 
 void Ivy_Seat_Init(IvySeat *seat);
 void Ivy_Seat_RequestCursor(struct wl_listener *listener, void *data);
 void Ivy_Seat_PointerFocusChange(struct wl_listener *listener, void *data);
+
+void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restrict keyboard);
 
 #ifdef __cplusplus
 }

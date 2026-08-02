@@ -38,10 +38,19 @@ void Ivy_Seat_Init(IvySeat *seat)
 
 void Ivy_Seat_RequestCursor(struct wl_listener *listener, void *data)
 {
-
+    // TODO: ...
 }
 
 void Ivy_Seat_PointerFocusChange(struct wl_listener *listener, void *data)
 {
+    // TODO: ....
+}
 
+void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restrict keyboard)
+{
+    IVY_ASSERT(seat != NULL, "[ERROR] IvySeat is NULL!");
+    IVY_ASSERT(keyboard != NULL, "[ERROR] IvyKeyboard is NULL!");
+
+    wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_keyboard);
+    wlr_seat_keyboard_notify_modifiers(seat->wlr_seat, &keyboard->wlr_keyboard->modifiers);
 }

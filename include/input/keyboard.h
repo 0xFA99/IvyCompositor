@@ -14,6 +14,9 @@ extern "C" {
 
 struct IvyKeyboard {
     struct wlr_keyboard *wlr_keyboard;
+    IvySeat *seat;
+
+    struct wl_list link;
 
     struct wl_listener key;
     struct wl_listener modifiers;
@@ -21,12 +24,13 @@ struct IvyKeyboard {
 };
 
 struct IvyKeyboardManager {
-    struct wl_list list;
+    struct wl_list keyboards;
 };
 
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager);
 
 IvyKeyboard *Ivy_Keyboard_Create(struct wlr_input_device *input_device);
+void Ivy_Keyboard_Init(IvySeat *restrict seat, IvyKeyboard *restrict keyboard, struct wlr_input_device *restrict input_device);
 
 #ifdef __cplusplus
 }

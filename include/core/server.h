@@ -2,10 +2,11 @@
 #define IVY_SERVER_H
 
 #include "core/fwd.h"
-#include "../input/seat.h"
 #include "core/output.h"
 #include "shell/xdg_shell.h"
 #include "shell/layer_shell.h"
+#include "input/seat.h"
+#include "input/idle_inhibitor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,7 @@ struct IvyServer {
     IvyOutputManager output_manager;
 
     IvyServerShells  shell;
+    IvyIdle idle;
 };
 
 void Ivy_Server_Init(IvyServer *server);

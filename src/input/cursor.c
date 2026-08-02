@@ -69,6 +69,8 @@ static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data)
             // TODO: IvyCursor_ProcessResize(cursor);
             break;
     }
+
+    wlr_idle
 }
 
 static void IvyCursor_HandleAxis(struct wl_listener *listener, void *data)

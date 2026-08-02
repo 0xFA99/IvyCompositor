@@ -15,6 +15,10 @@ typedef struct IvyKeyboardManager IvyKeyboardManager;
 typedef struct IvyKeyboard IvyKeyboard;
 typedef struct IvyCursor IvyCursor;
 
+typedef struct IvyIdle IvyIdle;
+typedef struct IvyIdleInhibitor IvyIdleInhibitor;
+typedef struct IvyIdleInhibitorManager IvyIdleInhibitorManager;
+
 typedef struct IvyXdgShell IvyXdgShell;
 typedef struct IvyXdgTopLevelManager IvyXdgTopLevelManager;
 typedef struct IvyXdgTopLevel IvyXdgTopLevel;
