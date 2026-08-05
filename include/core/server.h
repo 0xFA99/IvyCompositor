@@ -21,7 +21,11 @@ typedef struct {
 } IvyServerCore;
 
 typedef struct {
-    struct wlr_output_layout        *wlr_output_layout;
+    struct wlr_output_layout *wlr_output_layout;
+    IvyOutputManager manager;
+} IvyServerOutput;
+
+typedef struct {
     struct wlr_scene                *wlr_scene;
     struct wlr_scene_output_layout  *wlr_scene_output_layout;
 
@@ -41,12 +45,12 @@ typedef struct {
 struct IvyServer {
     IvyServerCore   core;
     IvyServerScene  scene;
+    IvyServerOutput output;
 
     IvySeat         seat;
-    IvyOutputManager output_manager;
 
-    IvyServerShells  shell;
-    IvyIdle idle;
+    IvyServerShells shell;
+    IvyIdle         idle;
 };
 
 void Ivy_Server_Init(IvyServer *server);

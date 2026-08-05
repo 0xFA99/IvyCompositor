@@ -2,9 +2,21 @@
 #define IVY_INPUT_CURSOR_H
 
 #include "core/fwd.h"
+#include "core/types.h"
 
 #include <wayland-server-core.h>
-#include <wlr/types/wlr_cursor.h>
+#include <wlr/util/box.h>
+
+#define IVY_CURSOR_DEFAULT_STYLE "default"
+#define IVY_CURSOR_DEFAULT_SIZE 24
+
+struct IvyXdgTopLevel;
+struct wlr_cursor;
+struct wlr_xcursor_manager;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum {
     IVY_CURSOR_PASSTHROUGH,
@@ -12,12 +24,17 @@ typedef enum {
     IVY_CURSOR_MOVE
 } IvyCursorMode;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct {
+    IvyCursorMode mode;
+    IvyXdgTopLevel *toplevel;
+    double x, y;
+    struct wlr_box geo_box;
+    u32 resize_edges;
+} IvyCursorGrab;
 
 struct IvyCursor {
     struct wlr_cursor *wlr_cursor;
+    struct wlr_xcursor_manager *wlr_xcursor_manager;
 
     struct wl_listener motion;
     struct wl_listener button;
@@ -29,6 +46,10 @@ struct IvyCursor {
     struct wl_listener pointer_focus_change;
 
     IvyCursorMode mode;
+    IvyXdgTopLevel *grabbed_toplevel;
+    double grab_x, grab_y;
+    struct wlr_box grab_geoBox;
+    u32 resize_edges;
 };
 
 void Ivy_Cursor_Init(IvyCursor *cursor);

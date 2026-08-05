@@ -18,6 +18,8 @@ struct IvySeat {
     IvyKeyboardManager keyboard_manager;
     IvyKeyboard *keyboard;  // current keyboard
     IvyCursor cursor;
+
+    struct wl_listener request_set_selection;
 };
 
 void Ivy_Seat_Init(IvySeat *seat);

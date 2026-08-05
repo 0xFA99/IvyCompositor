@@ -26,7 +26,6 @@ typedef struct IvyXdgPopupManager IvyXdgPopupManager;
 typedef struct IvyXdgPopup IvyXdgPopup;
 
 typedef struct IvyLayerShell IvyLayerShell;
-typedef struct IvyLayerSurfaceManager IvyLayerSurfaceManager;
 typedef struct IvyLayerSurface IvyLayerSurface;
 
 #ifdef __cplusplus

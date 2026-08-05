@@ -17,18 +17,22 @@
 #define IVY_COMPOSITOR_PROTOCOL_VERSION 5
 
 static void IvyServer_InitCore(IvyServer *server);
+static void IvyServer_InitOutput(IvyServer *server);
 static void IvyServer_InitScene(IvyServer *server);
 static void IvyServer_InitShells(IvyServer *server);
 static void IvyServer_InitInput(IvyServer *server);
+static void IvyServer_InitIdle(IvyServer *server);
 
 void Ivy_Server_Init(IvyServer *server)
 {
     IVY_ASSERT(server != NULL, "[ERROR] IvyServer is NULL!");
 
     IvyServer_InitCore(server);
+    IvyServer_InitOutput(server);
     IvyServer_InitScene(server);
     IvyServer_InitShells(server);
     IvyServer_InitInput(server);
+    IvyServer_InitIdle(server);
 }
 
 static void IvyServer_InitCore(IvyServer *server)
@@ -66,13 +70,21 @@ static void IvyServer_InitCore(IvyServer *server)
     IVY_CHECK(data_device_manager != NULL, "[WARNING] Failed to create wlr_data_device_manager!");
 }
 
-static void IvyServer_InitScene(IvyServer *server)
+static void IvyServer_InitOutput(IvyServer *server)
 {
     const IvyServerCore *core = &server->core;
-    IvyServerScene *scene = &server->scene;
+    IvyServerOutput *output = &server->output;
 
-    scene->wlr_output_layout = wlr_output_layout_create(core->wl_display);
-    IVY_CHECK(scene->wlr_output_layout != NULL, "[WARNING] Failed to create wlr_output_layout!");
+    output->wlr_output_layout = wlr_output_layout_create(core->wl_display);
+    IVY_CHECK(output->wlr_output_layout != NULL, "[WARNING] Failed to create wlr_output_layout!");
+
+    Ivy_OutputManager_Init(&output->manager);
+}
+
+static void IvyServer_InitScene(IvyServer *server)
+{
+    const IvyServerOutput *output = &server->output;
+    IvyServerScene *scene = &server->scene;
 
     scene->wlr_scene = wlr_scene_create();
     IVY_CHECK(scene->wlr_scene != NULL, "[WARNING] Failed to create wlr_scene!");
@@ -83,7 +95,7 @@ static void IvyServer_InitScene(IvyServer *server)
     scene->scene_top        = wlr_scene_tree_create(&scene->wlr_scene->tree);
     scene->scene_overlay    = wlr_scene_tree_create(&scene->wlr_scene->tree);
 
-    scene->wlr_scene_output_layout = wlr_scene_attach_output_layout(scene->wlr_scene, scene->wlr_output_layout);
+    scene->wlr_scene_output_layout = wlr_scene_attach_output_layout(scene->wlr_scene, output->wlr_output_layout);
 }
 
 static void IvyServer_InitShells(IvyServer *server)
@@ -99,4 +111,9 @@ static void IvyServer_InitInput(IvyServer *server)
     // TODO: ....
     // Ivy_KeyboardManager_Create();
     // Ivy_Cursor_Create();
+}
+
+static void IvyServer_InitIdle(IvyServer *server)
+{
+    Ivy_Idle_Init(&server->idle);
 }

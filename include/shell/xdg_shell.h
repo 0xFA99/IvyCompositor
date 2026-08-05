@@ -14,7 +14,6 @@ extern "C" {
 
 struct IvyXdgShell {
     struct wlr_xdg_shell *wlr_xdg_shell;
-    struct wlr_layer_shell_v1 *wlr_layer_shell_v1;
 
     IvyXdgTopLevelManager xdg_toplevel_manager;
     IvyXdgPopupManager xdg_popup_manager;

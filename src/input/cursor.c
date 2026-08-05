@@ -3,8 +3,10 @@
 #include "input/seat.h"
 #include "input/cursor.h"
 
-#include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_pointer.h>
+#include <wlr/types/wlr_xcursor_manager.h>
 
 static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data);
 static void IvyCursor_HandleAxis(struct wl_listener *listener, void *data);
@@ -19,6 +21,10 @@ void Ivy_Cursor_Init(IvyCursor *cursor)
 
     cursor->wlr_cursor = wlr_cursor_create();
     IVY_CHECK(cursor->wlr_cursor != NULL, "[WARNING] Failed to create wlr_cursor!");
+
+    cursor->wlr_xcursor_manager = wlr_xcursor_manager_create(NULL, IVY_CURSOR_DEFAULT_SIZE);
+    IVY_CHECK(cursor->wlr_xcursor_manager != NULL, "[WARNING] Failed to create wlr_cursor!");
+    wlr_xcursor_manager_load(cursor->wlr_xcursor_manager, 1);
 
     IvyCursor_SetupListeners(cursor);
 }
@@ -69,8 +75,11 @@ static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data)
             // TODO: IvyCursor_ProcessResize(cursor);
             break;
     }
+}
 
-    wlr_idle
+static void IvyCursor_ProcessMove(IvyCursor *cursor)
+{
+
 }
 
 static void IvyCursor_HandleAxis(struct wl_listener *listener, void *data)

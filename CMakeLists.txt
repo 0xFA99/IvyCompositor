@@ -11,6 +11,13 @@ pkg_check_modules(WAYLAND_SERVER REQUIRED wayland-server)
 pkg_check_modules(WLROOTS REQUIRED wlroots-0.20)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
+find_path(WLR_PROTOCOLS_UNSTABLE_XML_DIR
+        NAMES wlr-layer-shell-unstable-v1.xml
+        PATHS /usr/share/wlr-protocols/unstable
+        /usr/local/share/wlr-protocols/unstable
+        REQUIRED
+)
+
 set(PROTOCOL_HEADERS
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h"
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-output-power-management-unstable-v1-protocol.h"
@@ -19,24 +26,19 @@ set(PROTOCOL_HEADERS
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h"
         COMMAND wayland-scanner server-header
-        /usr/share/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml
+        "${WLR_PROTOCOLS_UNSTABLE_XML_DIR}/wlr-layer-shell-unstable-v1.xml"
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h"
-        DEPENDS /usr/share/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml
+        DEPENDS "${WLR_PROTOCOLS_UNSTABLE_XML_DIR}/wlr-layer-shell-unstable-v1.xml"
         COMMENT "Generating wlr-layer-shell protocol header..."
 )
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wlr-output-power-management-unstable-v1-protocol.h"
         COMMAND wayland-scanner server-header
-        /usr/share/wlr-protocols/unstable/wlr-output-power-management-unstable-v1.xml
+        "${WLR_PROTOCOLS_UNSTABLE_XML_DIR}/wlr-output-power-management-unstable-v1.xml"
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-output-power-management-unstable-v1-protocol.h"
-        DEPENDS /usr/share/wlr-protocols/unstable/wlr-output-power-management-unstable-v1.xml
+        DEPENDS "${WLR_PROTOCOLS_UNSTABLE_XML_DIR}/wlr-output-power-management-unstable-v1.xml"
         COMMENT "Generating wlr-output-power-management protocol header..."
-)
-execute_process(
-        COMMAND wayland-scanner server-header
-        /usr/share/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml
-        ${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h
 )
 
 add_executable(${PROJECT_NAME}
@@ -70,6 +72,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE WLR_USE_UNSTABLE)
 
 target_compile_options(${PROJECT_NAME} PRIVATE
         -Wall -Wextra -Wno-unused-parameter
+        -Wshadow
         ${WAYLAND_SERVER_CFLAGS_OTHER}
         ${WLROOTS_CFLAGS_OTHER}
         ${XKBCOMMON_CFLAGS_OTHER}
