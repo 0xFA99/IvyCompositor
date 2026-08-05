@@ -23,9 +23,6 @@ struct IvySeat {
 };
 
 void Ivy_Seat_Init(IvySeat *seat);
-void Ivy_Seat_RequestCursor(struct wl_listener *listener, void *data);
-void Ivy_Seat_PointerFocusChange(struct wl_listener *listener, void *data);
-
 void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restrict keyboard);
 
 #ifdef __cplusplus

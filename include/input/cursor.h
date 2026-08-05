@@ -45,14 +45,11 @@ struct IvyCursor {
     struct wl_listener request_cursor;
     struct wl_listener pointer_focus_change;
 
-    IvyCursorMode mode;
-    IvyXdgTopLevel *grabbed_toplevel;
-    double grab_x, grab_y;
-    struct wlr_box grab_geoBox;
-    u32 resize_edges;
+    IvyCursorGrab grab;
 };
 
 void Ivy_Cursor_Init(IvyCursor *cursor);
+void Ivy_Cursor_UpdateScale(IvyCursor *cursor, float scale);
 
 #ifdef __cplusplus
 }
