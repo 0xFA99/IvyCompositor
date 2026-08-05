@@ -5,6 +5,7 @@
 
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/types/wlr_input_device.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
@@ -23,7 +24,7 @@ void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager)
     wl_list_init(&keyboard_manager->keyboards);
 }
 
-void Ivy_KeyboardManager_Insert(IvyKeyboardManager *keyboard_manager, IvyKeyboard *keyboard)
+void Ivy_KeyboardManager_Insert(IvyKeyboardManager *restrict keyboard_manager, IvyKeyboard *restrict keyboard)
 {
     IVY_ASSERT(keyboard_manager != NULL, "[ERROR] IvyKeyboardManager is NULL!");
     IVY_ASSERT(keyboard != NULL, "[ERROR] IvyKeyboard is NULL!");
@@ -84,16 +85,25 @@ static void IvyKeyboard_HandleModifiers(struct wl_listener *listener, void *data
     (void)data;
 
     Ivy_Seat_SetKeyboard(seat, keyboard);
+    wlr_seat_keyboard_notify_modifiers(seat->wlr_seat, &keyboard->wlr_keyboard->modifiers);
 }
 
 static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
 {
-    // TODO: ....
+    IvyKeyboard *keyboard = wl_container_of(listener, keyboard, key);
+    const IvySeat *seat = keyboard->seat;
+    const struct wlr_keyboard_key_event *event = data;
+
+    // TODO: check compositor keybinding.
+
+    wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_keyboard);
+    wlr_seat_keyboard_notify_key(seat->wlr_seat, event->time_msec, event->keycode, event->state);
 }
 
 static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data)
 {
     IvyKeyboard *keyboard = wl_container_of(listener, keyboard, destroy);
+    IvySeat *seat = keyboard->seat;
     (void)data;
 
     wl_list_remove(&keyboard->key.link);
@@ -102,9 +112,11 @@ static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data)
 
     wl_list_remove(&keyboard->link);
 
-    if (keyboard->seat->keyboard == keyboard) {
-        keyboard->seat->keyboard = NULL;
+    if (seat->keyboard == keyboard) {
+        seat->keyboard = NULL;
     }
 
     free(keyboard);
+
+    Ivy_Seat_UpdateCapabilities(seat);
 }

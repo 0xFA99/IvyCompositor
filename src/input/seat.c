@@ -17,7 +17,6 @@
 #define IVY_SEAT_DEFAULT_NAME "seat0"
 
 static void IvySeat_HandleNewInput(struct wl_listener *listener, void *data);
-static void IvySeat_UpdateCapabilities(IvySeat *seat);
 static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void *data);
 
 void Ivy_Seat_Init(IvySeat *seat)
@@ -49,6 +48,17 @@ void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restr
     wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_keyboard);
 }
 
+void Ivy_Seat_UpdateCapabilities(IvySeat *seat)
+{
+    enum wl_seat_capability caps = WL_SEAT_CAPABILITY_POINTER;
+
+    if (!wl_list_empty(&seat->keyboard_manager.keyboards)) {
+        caps |= WL_SEAT_CAPABILITY_KEYBOARD;
+    }
+
+    wlr_seat_set_capabilities(seat->wlr_seat, caps);
+}
+
 static void IvySeat_HandleNewInput(struct wl_listener *listener, void *data)
 {
     IvySeat *seat = wl_container_of(listener, seat, new_input);
@@ -70,18 +80,7 @@ static void IvySeat_HandleNewInput(struct wl_listener *listener, void *data)
             break;
     }
 
-    IvySeat_UpdateCapabilities(seat);
-}
-
-static void IvySeat_UpdateCapabilities(IvySeat *seat)
-{
-    enum wl_seat_capability caps = WL_SEAT_CAPABILITY_POINTER;
-
-    if (!wl_list_empty(&seat->keyboard_manager.keyboards)) {
-        caps |= WL_SEAT_CAPABILITY_KEYBOARD;
-    }
-
-    wlr_seat_set_capabilities(seat->wlr_seat, caps);
+    Ivy_Seat_UpdateCapabilities(seat);
 }
 
 static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void *data)

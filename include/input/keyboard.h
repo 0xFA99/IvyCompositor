@@ -28,6 +28,7 @@ struct IvyKeyboardManager {
 };
 
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager);
+void Ivy_KeyboardManager_Insert(IvyKeyboardManager *restrict keyboard_manager, IvyKeyboard *restrict keyboard);
 
 IvyKeyboard *Ivy_Keyboard_Create(struct wlr_input_device *input_device);
 void Ivy_Keyboard_Init(IvySeat *restrict seat, IvyKeyboard *restrict keyboard, struct wlr_input_device *restrict input_device);
