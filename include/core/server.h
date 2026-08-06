@@ -30,11 +30,11 @@ typedef struct {
     struct wlr_scene_output_layout  *wlr_scene_output_layout;
 
     // Scene Layers (Z-Index Tree)
-    struct wlr_scene_tree           *scene_background;
-    struct wlr_scene_tree           *scene_bottom;
-    struct wlr_scene_tree           *scene_toplevel;
-    struct wlr_scene_tree           *scene_top;
-    struct wlr_scene_tree           *scene_overlay;
+    struct wlr_scene_tree           *background;
+    struct wlr_scene_tree           *bottom;
+    struct wlr_scene_tree           *toplevel;
+    struct wlr_scene_tree           *top;
+    struct wlr_scene_tree           *overlay;
 } IvyServerScene;
 
 typedef struct {

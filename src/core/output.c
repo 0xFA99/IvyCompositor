@@ -14,6 +14,7 @@
 
 static void IvyOutputManager_HandleNewOutput(struct wl_listener *listener, void *data);
 static void IvyOutput_HandleFrame(struct wl_listener *listener, void *data);
+static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *data);
 static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data);
 
 void Ivy_OutputManager_Init(IvyOutputManager *output_manager)
@@ -86,6 +87,9 @@ IvyOutput *Ivy_Output_Create(struct wlr_output *restrict wlr_output, IvyOutputMa
     output->frame.notify = IvyOutput_HandleFrame;
     wl_signal_add(&wlr_output->events.frame, &output->frame);
 
+    output->request_state.notify = IvyOutput_HandleRequestState;
+    wl_signal_add(&wlr_output->events.request_state, &output->request_state);
+
     output->destroy.notify = IvyOutput_HandleDestroy;
     wl_signal_add(&wlr_output->events.destroy, &output->destroy);
 
@@ -97,6 +101,7 @@ void Ivy_Output_Destroy(IvyOutput *output)
     if (!output) return;
 
     wl_list_remove(&output->frame.link);
+    wl_list_remove(&output->request_state.link);
     wl_list_remove(&output->destroy.link);
     wl_list_remove(&output->link);
 
@@ -126,6 +131,14 @@ static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data)
     (void)data;
 
     Ivy_Output_Destroy(output);
+}
+
+static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *data)
+{
+    IvyOutput *output = wl_container_of(listener, output, request_state);
+    const struct wlr_output_event_request_state *event = data;
+
+    wlr_output_commit_state(output->wlr_output, event->state);
 }
 
 static void IvyOutputManager_HandleNewOutput(struct wl_listener *listener, void *data)

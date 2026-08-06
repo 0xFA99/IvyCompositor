@@ -19,6 +19,7 @@ struct IvyOutput
     struct wl_list          link;
 
     struct wl_listener      frame;
+    struct wl_listener      request_state;
     struct wl_listener      destroy;
 };
 

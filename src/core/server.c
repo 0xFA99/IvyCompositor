@@ -89,11 +89,11 @@ static void IvyServer_InitScene(IvyServer *server)
     scene->wlr_scene = wlr_scene_create();
     IVY_CHECK(scene->wlr_scene != NULL, "[WARNING] Failed to create wlr_scene!");
 
-    scene->scene_background = wlr_scene_tree_create(&scene->wlr_scene->tree);
-    scene->scene_bottom     = wlr_scene_tree_create(&scene->wlr_scene->tree);
-    scene->scene_toplevel   = wlr_scene_tree_create(&scene->wlr_scene->tree);
-    scene->scene_top        = wlr_scene_tree_create(&scene->wlr_scene->tree);
-    scene->scene_overlay    = wlr_scene_tree_create(&scene->wlr_scene->tree);
+    scene->background = wlr_scene_tree_create(&scene->wlr_scene->tree);
+    scene->bottom     = wlr_scene_tree_create(&scene->wlr_scene->tree);
+    scene->toplevel   = wlr_scene_tree_create(&scene->wlr_scene->tree);
+    scene->top        = wlr_scene_tree_create(&scene->wlr_scene->tree);
+    scene->overlay    = wlr_scene_tree_create(&scene->wlr_scene->tree);
 
     scene->wlr_scene_output_layout = wlr_scene_attach_output_layout(scene->wlr_scene, output->wlr_output_layout);
 }

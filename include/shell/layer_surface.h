@@ -5,14 +5,13 @@
 
 #include <wayland-server-core.h>
 #include <wayland-util.h>
-#include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_scene.h>
 
 #ifdef __cplusplus
+extern "C" {
 #endif
 
-struct IvyLayerSurface
-{
+struct IvyLayerSurface {
     struct wlr_layer_surface_v1 *wlr_layer_surface;
     struct wlr_scene_layer_surface_v1 *wlr_scene_layer_surface;
 
@@ -29,7 +28,10 @@ struct IvyLayerSurfaceManager {
     struct wl_listener new_surface;
 };
 
+void Ivy_LayerSurfaceManager_HandleNewSurface(struct wl_listener *listener, void *data);
+
 #ifdef __cplusplus
+}
 #endif
 
 #endif
