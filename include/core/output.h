@@ -13,6 +13,8 @@ extern "C" {
 
 struct IvyOutput
 {
+    IvyServer               *server;
+
     struct wlr_output       *wlr_output;
     struct wlr_scene_output *wlr_scene_output;
 
