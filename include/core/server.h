@@ -39,7 +39,8 @@ typedef struct {
 
 typedef struct {
     IvyXdgShell xdg_shell;
-    IvyLayerShell layer_shell;
+    IvyXdgTopLevelManager xdg_toplevel_manager;
+    IvyXdgPopupManager xdg_popup_manager;
 } IvyServerShells;
 
 struct IvyServer {

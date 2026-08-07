@@ -101,7 +101,9 @@ static void IvyServer_InitScene(IvyServer *server)
 static void IvyServer_InitShells(IvyServer *server)
 {
     Ivy_XdgShell_Init(&server->shell.xdg_shell);
-    Ivy_LayerShell_Init(&server->shell.layer_shell);
+
+    Ivy_XdgTopLevelManager_Init(&server->shell.xdg_toplevel_manager);
+    Ivy_XdgPopupManager_Init(&server->shell.xdg_popup_manager);
 }
 
 static void IvyServer_InitInput(IvyServer *server)
