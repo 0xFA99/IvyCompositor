@@ -2,8 +2,6 @@
 #define IVY_CORE_SEAT_H
 
 #include "core/fwd.h"
-#include "input/keyboard.h"
-#include "input/cursor.h"
 
 #include <wayland-server-core.h>
 
@@ -13,12 +11,10 @@ extern "C" {
 
 struct IvySeat {
     struct wlr_seat *wlr_seat;
-    struct wl_listener new_input;
 
-    IvyKeyboardManager keyboard_manager;
-    IvyKeyboard *keyboard;  // current keyboard
-    IvyCursor cursor;
-
+    // cursor
+    struct wl_listener request_set_cursor;
+    struct wl_listener pointer_focus_change;
     struct wl_listener request_set_selection;
 };
 

@@ -25,6 +25,7 @@ struct IvyKeyboard {
 
 struct IvyKeyboardManager {
     struct wl_list keyboards;
+    IvyKeyboard *current_keyboard;
 };
 
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager);

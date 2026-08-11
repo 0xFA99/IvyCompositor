@@ -16,33 +16,35 @@ static void IvyOutput_HandleFrame(struct wl_listener *listener, void *data);
 static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *data);
 static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data);
 
-void Ivy_OutputManager_Init(IvyOutputManager *output_manager)
+void Ivy_OutputManager_Init(IvyOutputManager *manager)
 {
-    IvyServer *server = wl_container_of(output_manager, server, output.manager);
+    IVY_ASSERT(manager != NULL, "[ERROR] IvyOutputManager is NULL!");
 
-    server->output.wlr_output_layout = wlr_output_layout_create(server->core.wl_display);
+    IvyServer *server = wl_container_of(manager, server, output_manager);
 
-    wl_list_init(&output_manager->outputs);
+    manager->wlr_output_layout = wlr_output_layout_create(server->core.wl_display);
 
-    output_manager->new_output.notify = IvyOutputManager_HandleNewOutput;
-    wl_signal_add(&server->core.wlr_backend->events.new_output, &output_manager->new_output);
+    wl_list_init(&manager->outputs);
+
+    manager->new_output.notify = IvyOutputManager_HandleNewOutput;
+    wl_signal_add(&server->core.wlr_backend->events.new_output, &manager->new_output);
 }
 
 static void IvyOutputManager_HandleNewOutput(struct wl_listener *listener, void *data)
 {
-    IvyServer *server = wl_container_of(listener, server, output.manager.new_output);
+    IvyServer *server = wl_container_of(listener, server, output_manager.new_output);
     struct wlr_output *wlr_output = data;
 
     wlr_output_init_render(wlr_output, server->core.wlr_allocator, server->core.wlr_renderer);
 
     IvyOutput_ConfigureState(wlr_output);
 
-    IvyOutput_Create(server, wlr_output);
+    IvyOutput *output = IvyOutput_Create(server, wlr_output);
 
-    struct wlr_output_layout_output *layout_output = wlr_output_layout_add_auto(server->output.wlr_output_layout, wlr_output);
-    struct wlr_scene_output *scene_output = wlr_scene_output_create(server->scene.wlr_scene, wlr_output);
+    struct wlr_output_layout_output *layout_output = wlr_output_layout_add_auto(server->output_manager.wlr_output_layout, wlr_output);
+    output->wlr_scene_output = wlr_scene_output_create(server->scene.wlr_scene, wlr_output);
 
-    wlr_scene_output_layout_add_output(server->scene.wlr_scene_output_layout, layout_output, scene_output);
+    wlr_scene_output_layout_add_output(server->scene.wlr_scene_output_layout, layout_output, output->wlr_scene_output);
 }
 
 static void IvyOutput_ConfigureState(struct wlr_output *wlr_output)
@@ -66,7 +68,7 @@ static IvyOutput *IvyOutput_Create(IvyServer *server, struct wlr_output *wlr_out
     output->server = server;
     output->wlr_output = wlr_output;
 
-    wl_list_insert(&server->output.manager.outputs, &output->link);
+    wl_list_insert(&server->output_manager.outputs, &output->link);
 
     IvyOutput_SetupSignals(output);
 
@@ -88,15 +90,12 @@ static void IvyOutput_SetupSignals(IvyOutput *output)
 static void IvyOutput_HandleFrame(struct wl_listener *listener, void *data)
 {
     IvyOutput *output = wl_container_of(listener, output, frame);
-    struct wlr_scene *scene = output->server->scene.wlr_scene;
 
-    struct wlr_scene_output *scene_output = wlr_scene_get_scene_output(scene, output->wlr_output);
-
-    wlr_scene_output_commit(scene_output, NULL);
+    wlr_scene_output_commit(output->wlr_scene_output, NULL);
 
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
-    wlr_scene_output_send_frame_done(scene_output, &now);
+    wlr_scene_output_send_frame_done(output->wlr_scene_output, &now);
 }
 static void IvyOutput_HandleRequestState(struct wl_listener *listener, void *data)
 {

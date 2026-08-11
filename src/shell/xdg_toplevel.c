@@ -24,6 +24,38 @@ void Ivy_XdgTopLevelManager_Init(IvyXdgTopLevelManager *xdg_toplevel_manager)
     wl_signal_add(&xdg_shell->wlr_xdg_shell->events.new_toplevel, &xdg_toplevel_manager->new_toplevel);
 }
 
+IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy)
+{
+    IVY_ASSERT(server != NULL, "[WARNING] IvyServer is NULL!");
+    IVY_ASSERT(surface != NULL, "[WARNING] wlr_surface is NULL!");
+
+    struct wlr_scene_node *node = wlr_scene_node_at(&server->scene.wlr_scene->tree.node, lx, ly, sx, sy);
+
+    if (node == NULL || node->type != WLR_SCENE_NODE_BUFFER)
+        return NULL;
+
+    struct wlr_scene_buffer *scene_buffer = wlr_scene_buffer_from_node(node);
+    struct wlr_scene_surface *scene_surface = wlr_scene_surface_try_from_buffer(scene_buffer);
+
+    if (!scene_surface)
+        return NULL;
+
+    *surface = scene_surface->surface;
+    struct wlr_scene_tree *tree = node->parent;
+
+    while (tree != NULL && tree->node.data == NULL) {
+        tree = tree->node.parent;
+    }
+
+    return tree->node.data;
+}
+
+void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
+{
+    if (toplevel == NULL) return;
+    // TODO: implement toplevel focus
+}
+
 static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data)
 {
     IvyXdgTopLevelManager *manager = wl_container_of(listener, manager, new_toplevel);

@@ -7,9 +7,12 @@ extern "C" {
 
 typedef struct IvyServer IvyServer;
 
+typedef struct IvyCore IvyCore;
 typedef struct IvyOutputManager IvyOutputManager;
 typedef struct IvyOutput IvyOutput;
+typedef struct IvyScene IvyScene;
 
+typedef struct IvyInput IvyInput;
 typedef struct IvySeat IvySeat;
 typedef struct IvyKeyboardManager IvyKeyboardManager;
 typedef struct IvyKeyboard IvyKeyboard;
@@ -19,6 +22,7 @@ typedef struct IvyIdle IvyIdle;
 typedef struct IvyIdleInhibitor IvyIdleInhibitor;
 typedef struct IvyIdleInhibitorManager IvyIdleInhibitorManager;
 
+typedef struct IvyShell IvyShell;
 typedef struct IvyXdgShell IvyXdgShell;
 typedef struct IvyXdgTopLevelManager IvyXdgTopLevelManager;
 typedef struct IvyXdgTopLevel IvyXdgTopLevel;

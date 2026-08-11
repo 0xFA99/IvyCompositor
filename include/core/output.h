@@ -25,8 +25,8 @@ struct IvyOutput
     struct wl_listener      destroy;
 };
 
-struct IvyOutputManager
-{
+struct IvyOutputManager {
+    struct wlr_output_layout *wlr_output_layout;
     struct wl_list          outputs;
     struct wl_listener      new_output;
 };

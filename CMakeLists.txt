@@ -44,14 +44,18 @@ add_custom_command(
 add_executable(${PROJECT_NAME}
         src/main.c
 
+        src/core/core.c
         src/core/server.c
         src/core/output.c
+        src/core/scene.c
 
+        src/input/input.c
         src/input/seat.c
         src/input/cursor.c
         src/input/keyboard.c
         src/input/idle_inhibitor.c
 
+        src/shell/shell.c
         src/shell/layer_shell.c
         src/shell/layer_surface.c
         src/shell/xdg_shell.c

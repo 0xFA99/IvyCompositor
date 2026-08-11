@@ -9,6 +9,10 @@
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_scene.h>
+#include <wlr/util/box.h>
+
+#define IVY_CURSOR_DEFAULT_SIZE 24
+#define IVY_CURSOR_DEFAULT_STYLE "default"
 
 static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data);
 static void IvyCursor_HandleAxis(struct wl_listener *listener, void *data);
@@ -18,94 +22,35 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data);
 static void IvyCursor_HandleRequestCursor(struct wl_listener *listener, void *data);
 static void IvyCursor_HandlePointerFocusChange(struct wl_listener *listener, void *data);
 
-static void IvyCursor_SetupListeners(IvyCursor *cursor);
-
-static struct wlr_surface *IvyCursor_SurfaceAt(IvyServer *server, double lx, double ly, double *sx, double *sy, IvyXdgTopLevel **out_toplevel)
-{
-    struct wlr_scene_node *node = wlr_scene_node_at(&server->scene.wlr_scene->tree.node, lx, ly, sx, sy);
-
-    if (out_toplevel) {
-        *out_toplevel = NULL;
-    }
-
-    if (node == NULL || node->type != WLR_SCENE_NODE_BUFFER) {
-        return NULL;
-    }
-
-    struct wlr_scene_buffer *scene_buffer = wlr_scene_buffer_from_node(node);
-    struct wlr_scene_surface *scene_surface = wlr_scene_surface_try_from_buffer(scene_buffer);
-
-    if (scene_surface == NULL) {
-        return NULL;
-    }
-
-    if (out_toplevel) {
-        struct wlr_scene_tree *tree = node->parent;
-        while (tree != NULL && tree->node.data == NULL) {
-            tree = tree->node.parent;
-        }
-        if (tree != NULL) {
-            *out_toplevel = tree->node.data;
-        }
-    }
-
-    return scene_surface->surface;
-}
-
 void Ivy_Cursor_Init(IvyCursor *cursor)
 {
     IVY_ASSERT(cursor != NULL, "[ERROR] IvyCursor is NULL!");
 
+    IvySeat *seat = wl_container_of(cursor, seat, cursor);
+    IvyServer *server = wl_container_of(seat, server, seat);
+
     cursor->wlr_cursor = wlr_cursor_create();
     IVY_CHECK(cursor->wlr_cursor != NULL, "[WARNING] Failed to create wlr_cursor!");
 
+    wlr_cursor_attach_output_layout(cursor->wlr_cursor, server->output.wlr_output_layout);
+
     cursor->wlr_xcursor_manager = wlr_xcursor_manager_create(NULL, IVY_CURSOR_DEFAULT_SIZE);
-    IVY_CHECK(cursor->wlr_xcursor_manager != NULL, "[WARNING] Failed to create wlr_cursor!");
-
-    wlr_xcursor_manager_load(cursor->wlr_xcursor_manager, 1);
-
     cursor->grab.mode = IVY_CURSOR_PASSTHROUGH;
-    cursor->grab.toplevel = NULL;
-    cursor->grab.x = 0;
-    cursor->grab.y = 0;
-    cursor->grab.resize_edges = 0;
 
-    IvyCursor_SetupListeners(cursor);
-}
-
-void Ivy_Cursor_UpdateScale(IvyCursor *cursor, float scale)
-{
-    IVY_ASSERT(cursor != NULL, "[ERROR] IvyCursor is NULL!");
-
-    wlr_xcursor_manager_load(cursor->wlr_xcursor_manager, scale);
-}
-
-static void IvyCursor_SetupListeners(IvyCursor *cursor)
-{
-    const IvySeat *seat = wl_container_of(cursor, seat, cursor);
-
-    // movement
     cursor->motion.notify = IvyCursor_HandleMotion;
     wl_signal_add(&cursor->wlr_cursor->events.motion, &cursor->motion);
 
-    // scroll
+    cursor->button.notify = IvyCursor_HandleButton;
+    wl_signal_add(&cursor->wlr_cursor->events.button, &cursor->button);
+
     cursor->axis.notify = IvyCursor_HandleAxis;
     wl_signal_add(&cursor->wlr_cursor->events.axis, &cursor->axis);
 
     cursor->frame.notify = IvyCursor_HandleFrame;
     wl_signal_add(&cursor->wlr_cursor->events.frame, &cursor->frame);
-
-    cursor->button.notify = IvyCursor_HandleButton;
-    wl_signal_add(&cursor->wlr_cursor->events.button, &cursor->button);
-
-    cursor->request_cursor.notify = IvyCursor_HandleRequestCursor;
-    wl_signal_add(&seat->wlr_seat->events.request_set_cursor, &cursor->request_cursor);
-
-    cursor->pointer_focus_change.notify = IvyCursor_HandlePointerFocusChange;
-    wl_signal_add(&seat->wlr_seat->pointer_state.events.focus_change, &cursor->pointer_focus_change);
 }
 
-static void IvyCursor_ProcessMove(IvyCursor *cursor);
+static void IvyCursor_ProcessMove(const IvyCursor *cursor);
 static void IvyCursor_ProcessResize(IvyCursor *cursor);
 static void IvyCursor_ProcessPassthrough(IvyCursor *cursor, u32 time_msec);
 
@@ -116,48 +61,87 @@ static void IvyCursor_HandleMotion(struct wl_listener *listener, void *data)
 
     wlr_cursor_move(cursor->wlr_cursor, &event->pointer->base, event->delta_x, event->delta_y);
 
-    switch (cursor->grab.mode) {
-        case IVY_CURSOR_PASSTHROUGH:
-            IvyCursor_ProcessPassthrough(cursor, event->time_msec);
-            break;
-
-        case IVY_CURSOR_MOVE:
-            IvyCursor_ProcessMove(cursor);
-            break;
-
-        case IVY_CURSOR_RESIZE:
-            IvyCursor_ProcessResize(cursor);
-            break;
+    switch (cursor->grab.mode)
+    {
+        case IVY_CURSOR_MOVE: IvyCursor_ProcessMove(cursor); break;
+        case IVY_CURSOR_RESIZE: IvyCursor_ProcessResize(cursor); break;
+        case IVY_CURSOR_PASSTHROUGH: IvyCursor_ProcessPassthrough(cursor, event->time_msec); break;
+        default: break;
     }
 }
 
-static void IvyCursor_ProcessPassthrough(IvyCursor *cursor, u32 time_msec)
+static void IvyCursor_ProcessPassthrough(IvyCursor *cursor, const u32 time_msec)
 {
     IvySeat *seat = wl_container_of(cursor, seat, cursor);
     IvyServer *server = wl_container_of(seat, server, seat);
 
-    double sx = 0, sy = 0;
-    struct wlr_surface *surface = IvyCursor_SurfaceAt(server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &sx, &sy, NULL);
+    double sx, sy;
+    struct wlr_surface *surface = NULL;
+    IvyXdgTopLevel *toplevel = Ivy_XdgTopLevel_SurfaceAt(server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
 
-    if (surface != NULL) {
+    if (!toplevel) {
+        wlr_cursor_set_xcursor(cursor->wlr_cursor, cursor->wlr_xcursor_manager, IVY_CURSOR_DEFAULT_STYLE);
+    }
+
+    if (surface) {
         wlr_seat_pointer_notify_enter(seat->wlr_seat, surface, sx, sy);
         wlr_seat_pointer_notify_motion(seat->wlr_seat, time_msec, sx, sy);
     } else {
         wlr_seat_pointer_clear_focus(seat->wlr_seat);
-        wlr_cursor_set_xcursor(cursor->wlr_cursor, cursor->wlr_xcursor_manager, IVY_CURSOR_DEFAULT_STYLE);
     }
 }
 
-static void IvyCursor_ProcessMove(IvyCursor *cursor)
+static void IvyCursor_ProcessMove(const IvyCursor *cursor)
 {
-    // TODO: implement drag-move toplevel.
-    (void)cursor;
+    const IvyXdgTopLevel *toplevel = cursor->grab.toplevel;
+
+    wlr_scene_node_set_position(&toplevel->wlr_scene_tree->node,
+        (int)(cursor->wlr_cursor->x - cursor->grab.x),
+        (int)(cursor->wlr_cursor->y - cursor->grab.y));
 }
 
 static void IvyCursor_ProcessResize(IvyCursor *cursor)
 {
-    // TODO: implement drag-resize toplevel with cursor->grab.geo_box
-    (void)cursor;
+    IvyXdgTopLevel *toplevel = cursor->grab.toplevel;
+    double border_x = cursor->wlr_cursor->x - cursor->grab.x;
+    double border_y = cursor->wlr_cursor->y - cursor->grab.y;
+    int new_left = cursor->grab.geo_box.x;
+    int new_right = cursor->grab.geo_box.x + cursor->grab.geo_box.width;
+    int new_top = cursor->grab.geo_box.y;
+    int new_bottom = cursor->grab.geo_box.y + cursor->grab.geo_box.height;
+
+    if (cursor->grab.resize_edges & WLR_EDGE_TOP) {
+        new_top = border_y;
+        if (new_top >= new_bottom) {
+            new_top = new_bottom - 1;
+        }
+    }
+    else if (cursor->grab.resize_edges & WLR_EDGE_BOTTOM) {
+        new_bottom = border_y;
+        if (new_bottom <= new_top) {
+            new_bottom = new_top + 1;
+        }
+    }
+
+    if (cursor->grab.resize_edges & WLR_EDGE_LEFT) {
+        new_left = border_x;
+        if (new_left >= new_right) {
+            new_left = new_right - 1;
+        }
+    }
+    else if (cursor->grab.resize_edges & WLR_EDGE_RIGHT) {
+        new_right = border_x;
+        if (new_right <= new_left) {
+            new_right = new_left + 1;
+        }
+    }
+
+    struct wlr_box *geo_box = &toplevel->wlr_xdg_toplevel->base->geometry;
+    wlr_scene_node_set_position(&toplevel->wlr_scene_tree->node, new_left - geo_box->x, new_top - geo_box->y);
+
+    int new_width = new_right - new_left;
+    int new_height = new_bottom - new_top;
+    wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, new_width, new_height);
 }
 
 static void IvyCursor_HandleAxis(struct wl_listener *listener, void *data)
@@ -183,29 +167,22 @@ static void IvyCursor_HandleFrame(struct wl_listener *listener, void *data)
 
 static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
 {
-    IvyCursor *cursor = wl_container_of(listener, cursor, button);
-    IvySeat *seat = wl_container_of(cursor, seat, cursor);
+    IvySeat *seat = wl_container_of(listener, seat, cursor);
     IvyServer *server = wl_container_of(seat, server, seat);
-    const struct wlr_pointer_button_event *event = data;
+    struct wlr_pointer_button_event *event = data;
+
+    struct wlr_cursor *wlr_cursor = seat->cursor.wlr_cursor;
 
     wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
 
     if (event->state == WL_POINTER_BUTTON_STATE_RELEASED) {
-        if (cursor->grab.mode != IVY_CURSOR_PASSTHROUGH) {
-            cursor->grab.mode = IVY_CURSOR_PASSTHROUGH;
-            cursor->grab.toplevel = NULL;
-            wlr_cursor_set_xcursor(cursor->wlr_cursor, cursor->wlr_xcursor_manager, IVY_CURSOR_DEFAULT_STYLE);
-        }
-        return;
-    }
+        // TODO: implement cursor reset mode
+    } else {
+        double sx, sy;
+        struct wlr_surface *surface = NULL;
+        IvyXdgTopLevel *toplevel = Ivy_XdgTopLevel_SurfaceAt(server, wlr_cursor->x, wlr_cursor->y, &surface, &sx, &sy);
 
-    double sx = 0, sy = 0;
-    IvyXdgTopLevel *toplevel = NULL;
-    struct wlr_surface *surface = IvyCursor_SurfaceAt(server, cursor->wlr_cursor->x,
-                                                        cursor->wlr_cursor->y, &sx, &sy, &toplevel);
-
-    if (surface != NULL && toplevel != NULL) {
-        // TODO: Ivy_XdgTopLevel_Focus(toplevel, surface);
+        Ivy_XdgTopLevel_Focus(toplevel);
     }
 }
 

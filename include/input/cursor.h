@@ -10,10 +10,6 @@
 #define IVY_CURSOR_DEFAULT_STYLE "default"
 #define IVY_CURSOR_DEFAULT_SIZE 24
 
-struct IvyXdgTopLevel;
-struct wlr_cursor;
-struct wlr_xcursor_manager;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,11 +21,11 @@ typedef enum {
 } IvyCursorMode;
 
 typedef struct {
-    IvyCursorMode mode;
-    IvyXdgTopLevel *toplevel;
-    double x, y;
-    struct wlr_box geo_box;
-    u32 resize_edges;
+    IvyCursorMode   mode;
+    IvyXdgTopLevel  *toplevel;
+    double          x, y;
+    struct wlr_box  geo_box;
+    u32             resize_edges;
 } IvyCursorGrab;
 
 struct IvyCursor {
