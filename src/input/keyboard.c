@@ -97,11 +97,11 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
         }
 
         case XKB_KEY_F1: {
-            if (wl_list_length(&server->shell.xdg_toplevel_manager.toplevels) < 2) {
+            if (wl_list_length(&server->shell.xdg_shell.xdg_toplevel_manager.toplevels) < 2) {
                 break;
             }
 
-            IvyXdgTopLevel *next_toplevel = wl_container_of(server->shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
+            IvyXdgTopLevel *next_toplevel = wl_container_of(server->shell.xdg_shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
             // TODO: implement toplevel focus
             return true;
         }

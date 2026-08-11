@@ -17,7 +17,9 @@ void Ivy_XdgPopupManager_Init(IvyXdgPopupManager *popup_manager)
 {
     IVY_ASSERT(popup_manager != NULL, "[ERROR] IvyPopupManager is NULL!");
 
-    IvyServer *server = wl_container_of(popup_manager, server, shell.xdg_popup_manager);
+    IvyServer *server = wl_container_of(popup_manager, server, shell.xdg_shell.xdg_popup_manager);
+
+    wl_list_init(&popup_manager->popups);
 
     popup_manager->new_popup.notify = IvyXdgPopupManager_HandleNewPopup;
     wl_signal_add(&server->shell.xdg_shell.wlr_xdg_shell->events.new_popup, &popup_manager->new_popup);
@@ -25,7 +27,7 @@ void Ivy_XdgPopupManager_Init(IvyXdgPopupManager *popup_manager)
 
 static void IvyXdgPopupManager_HandleNewPopup(struct wl_listener *listener, void *data)
 {
-    (void)listener;
+    IvyXdgPopupManager *popup_manager = wl_container_of(listener, popup_manager, new_popup);
     struct wlr_xdg_popup *xdg_popup = data;
 
     IvyXdgPopup *popup = calloc(1, sizeof(IvyXdgPopup));
@@ -45,6 +47,8 @@ static void IvyXdgPopupManager_HandleNewPopup(struct wl_listener *listener, void
 
     popup->destroy.notify = IvyXdgPopup_HandleDestroy;
     wl_signal_add(&xdg_popup->events.destroy, &popup->destroy);
+
+    wl_list_insert(&popup_manager->popups, &popup->link);
 }
 
 static void IvyXdgPopup_HandleCommit(struct wl_listener *listener, void *data)
@@ -64,6 +68,7 @@ static void IvyXdgPopup_HandleDestroy(struct wl_listener *listener, void *data)
 
     wl_list_remove(&popup->commit.link);
     wl_list_remove(&popup->destroy.link);
+    wl_list_remove(&popup->link);
 
     free(popup);
 }

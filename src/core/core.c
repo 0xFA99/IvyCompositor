@@ -13,6 +13,7 @@
 #include <wlr/types/wlr_subcompositor.h>
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #define IVY_COMPOSITOR_PROTOCOL_VERSION 5
 
@@ -65,6 +66,30 @@ void Ivy_Core_Start(IvyCore *core)
 
     bool status = wlr_backend_start(core->wlr_backend);
     IVY_CHECK(status != false, "[WARNING] Failed to start backend!");
+}
+
+void Ivy_Core_AddSocket(IvyCore *core)
+{
+    IVY_ASSERT(core != NULL, "[ERROR] IvyCore is NULL!");
+
+    core->socket = wl_display_add_socket_auto(core->wl_display);
+    IVY_CHECK(core->socket != NULL, "[WARNING] Failed to add socket!");
+}
+
+void Ivy_Core_StartSocket(IvyCore *core)
+{
+    IVY_ASSERT(core != NULL, "[ERROR] IvyCore is NULL!");
+
+    if (!wlr_backend_start(core->wlr_backend)) {
+        wlr_backend_destroy(core->wlr_backend);
+        wl_display_destroy(core->wl_display);
+    }
+
+    bool status = wlr_backend_start(core->wlr_backend);
+    IVY_CHECK(status != false, "[WARNING] Failed to start backend!");
+
+    setenv("WAYLAND_DISPLAY", core->socket, true);
+    wl_display_run(core->wl_display);
 }
 
 void Ivy_Core_Destroy(const IvyCore *core)

@@ -3,8 +3,7 @@
 
 #include "core/fwd.h"
 #include "shell/xdg_shell.h"
-#include "shell/xdg_toplevel.h"
-#include "shell/xdg_popup.h"
+#include "shell/layer_shell.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,8 +11,7 @@ extern "C" {
 
 struct IvyShell {
     IvyXdgShell xdg_shell;
-    IvyXdgTopLevelManager xdg_toplevel_manager;
-    IvyXdgPopupManager xdg_popup_manager;
+    IvyLayerShell layer_shell;
 };
 
 void Ivy_Shell_Init(IvyShell *shell);

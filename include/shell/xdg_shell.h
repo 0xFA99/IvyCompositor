@@ -6,7 +6,6 @@
 #include "shell/xdg_popup.h"
 
 #include <wlr/types/wlr_xdg_shell.h>
-#include <wlr/types/wlr_layer_shell_v1.h>
 
 #ifdef __cplusplus
 extern "C" {

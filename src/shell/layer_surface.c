@@ -67,7 +67,7 @@ static void IvyLayerSurface_HandleUnmap(struct wl_listener *listener, void *data
 
 static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *data)
 {
-    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, map);
+    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, commit);
 
     if (layer_surface->wlr_layer_surface->initial_commit)
     {
@@ -80,7 +80,7 @@ static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *dat
 
 static void IvyLayerSurface_HandleDestroy(struct wl_listener *listener, void *data)
 {
-    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, map);
+    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, destroy);
 
     wl_list_remove(&layer_surface->map.link);
     wl_list_remove(&layer_surface->unmap.link);

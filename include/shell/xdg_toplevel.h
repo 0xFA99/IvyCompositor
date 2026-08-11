@@ -14,6 +14,7 @@ struct IvyXdgTopLevel
     struct wlr_xdg_toplevel *wlr_xdg_toplevel;
     struct wlr_scene_tree *wlr_scene_tree;
 
+    IvyServer *server;
     struct wl_list link;
 
     struct wl_listener map;
