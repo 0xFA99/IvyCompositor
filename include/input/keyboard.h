@@ -12,10 +12,10 @@ struct wlr_input_device;
 extern "C" {
 #endif
 
-struct IvyKeyboard {
+struct IvyKeyboard
+{
+    IvyServer *server;
     struct wlr_keyboard *wlr_keyboard;
-    IvySeat *seat;
-
     struct wl_list link;
 
     struct wl_listener key;
@@ -31,7 +31,7 @@ struct IvyKeyboardManager {
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager);
 void Ivy_KeyboardManager_Insert(IvyKeyboardManager *restrict keyboard_manager, IvyKeyboard *restrict keyboard);
 
-IvyKeyboard *Ivy_Keyboard_Create(struct wlr_input_device *input_device);
+IvyKeyboard *Ivy_Keyboard_Create(IvyKeyboardManager *keyboard_manager, struct wlr_input_device *input_device);
 void Ivy_Keyboard_Init(IvySeat *restrict seat, IvyKeyboard *restrict keyboard, struct wlr_input_device *restrict input_device);
 
 #ifdef __cplusplus

@@ -3,6 +3,8 @@
 
 #include "core/fwd.h"
 #include "input/seat.h"
+#include "input/keyboard.h"
+#include "input/cursor.h"
 
 #include <wayland-server-core.h>
 

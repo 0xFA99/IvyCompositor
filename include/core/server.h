@@ -5,25 +5,20 @@
 #include "core/core.h"
 #include "core/output.h"
 #include "core/scene.h"
+#include "input/input.h"
 #include "shell/shell.h"
-#include "input/seat.h"
 #include "input/idle_inhibitor.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct {
-    IvySeat seat;
-    struct wl_listener new_input;
-} IvyServerInput;
-
 struct IvyServer {
     IvyCore          core;
     IvyOutputManager output_manager;
     IvyScene         scene;
     IvyShell         shell;
-    IvyServerInput   input;
+    IvyInput         input;
     IvyIdle          idle;
 };
 
