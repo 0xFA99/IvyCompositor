@@ -93,7 +93,7 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
     {
         case XKB_KEY_Escape: {
             wl_display_terminate(server->core.wl_display);
-            break;
+            return true;
         }
 
         case XKB_KEY_F1: {
@@ -103,12 +103,12 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
 
             IvyXdgTopLevel *next_toplevel = wl_container_of(server->shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
             // TODO: implement toplevel focus
-            break;
+            return true;
         }
         default: break;
     }
 
-    return true;
+    return false;
 }
 
 static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
@@ -122,11 +122,14 @@ static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data)
     const xkb_keysym_t *syms;
     const int nsyms = xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
 
-    const bool handled = false;
+    bool handled = false;
     const u32 modifiers = wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
     if (modifiers & WLR_MODIFIER_ALT && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
         for (int i = 0; i < nsyms; i++) {
-            IvyKeyboard_HandleKeybinding(keyboard->server, syms[i]);
+            if (IvyKeyboard_HandleKeybinding(keyboard->server, syms[i])) {
+                handled = true;
+                break;
+            }
         }
     }
 

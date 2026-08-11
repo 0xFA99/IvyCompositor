@@ -32,6 +32,10 @@ struct IvyCursor {
     struct wlr_cursor *wlr_cursor;
     struct wlr_xcursor_manager *wlr_xcursor_manager;
 
+    IvyInput *input;
+
+    struct wlr_surface *focused_surface;
+
     struct wl_listener motion;
     struct wl_listener button;
     struct wl_listener axis;
@@ -44,7 +48,7 @@ struct IvyCursor {
     IvyCursorGrab grab;
 };
 
-void Ivy_Cursor_Init(IvyCursor *cursor);
+void Ivy_Cursor_Init(IvyCursor *cursor, IvyInput *input);
 void Ivy_Cursor_UpdateScale(IvyCursor *cursor, float scale);
 
 #ifdef __cplusplus

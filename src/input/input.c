@@ -10,7 +10,7 @@
 #include <wlr/types/wlr_cursor.h>
 
 static void IvyInput_HandleNewInput(struct wl_listener *listener, void *data);
-static void IvyInput_HandleNewKeyboard(IvyKeyboard *keyboard, struct wlr_input_device *input_device);
+static void IvyInput_HandleNewKeyboard(IvyKeyboardManager *keyboard_manager, struct wlr_input_device *input_device);
 static void IvyInput_HandleNewPointer(IvyCursor *cursor, struct wlr_input_device *input_device);
 
 void Ivy_Input_Init(IvyInput *input)
@@ -22,8 +22,7 @@ void Ivy_Input_Init(IvyInput *input)
     // keyboard manager
     Ivy_KeyboardManager_Init(&input->keyboard_manager);
 
-    // cursor
-    Ivy_Cursor_Init(&input->cursor);
+    Ivy_Cursor_Init(&input->cursor, input);
 
     // seat
     Ivy_Seat_Init(&input->seat);
@@ -39,9 +38,7 @@ static void IvyInput_HandleNewInput(struct wl_listener *listener, void *data)
 
     switch (input_device->type)
     {
-        case WLR_INPUT_DEVICE_KEYBOARD:
-        // TODO: keyboard
-        break;
+        case WLR_INPUT_DEVICE_KEYBOARD: IvyInput_HandleNewKeyboard(&input->keyboard_manager, input_device); break;
         case WLR_INPUT_DEVICE_POINTER: IvyInput_HandleNewPointer(&input->cursor, input_device); break;
         default: break;
     }
@@ -54,13 +51,12 @@ static void IvyInput_HandleNewInput(struct wl_listener *listener, void *data)
     wlr_seat_set_capabilities(input->seat.wlr_seat, caps);
 }
 
-static void IvyInput_HandleNewKeyboard(IvyKeyboard *keyboard, struct wlr_input_device *input_device)
+static void IvyInput_HandleNewKeyboard(IvyKeyboardManager *keyboard_manager, struct wlr_input_device *input_device)
 {
-    keyboard = Ivy_Keyboard_Create(input_device);
+    Ivy_Keyboard_Create(keyboard_manager, input_device);
 }
 
 static void IvyInput_HandleNewPointer(IvyCursor *cursor, struct wlr_input_device *input_device)
 {
-    IvyInput *input = wl_container_of(cursor, input, cursor);
     wlr_cursor_attach_input_device(cursor->wlr_cursor, input_device);
 }
