@@ -21,3 +21,12 @@ void Ivy_XdgShell_Init(IvyXdgShell *xdg_shell)
     Ivy_XdgTopLevelManager_Init(&xdg_shell->xdg_toplevel_manager);
     Ivy_XdgPopupManager_Init(&xdg_shell->xdg_popup_manager);
 }
+
+void Ivy_XdgShell_Destroy(IvyXdgShell *xdg_shell)
+{
+    IVY_ASSERT(xdg_shell != NULL, "[ERROR] IvyXdgShell is NULL!");
+
+    Ivy_XdgTopLevelManager_Destroy(&xdg_shell->xdg_toplevel_manager);
+    Ivy_XdgPopupManager_Destroy(&xdg_shell->xdg_popup_manager);
+}
+

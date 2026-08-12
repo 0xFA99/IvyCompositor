@@ -32,6 +32,13 @@ void Ivy_XdgTopLevelManager_Init(IvyXdgTopLevelManager *xdg_toplevel_manager)
     wl_signal_add(&xdg_shell->wlr_xdg_shell->events.new_toplevel, &xdg_toplevel_manager->new_toplevel);
 }
 
+void Ivy_XdgTopLevelManager_Destroy(IvyXdgTopLevelManager *xdg_toplevel_manager)
+{
+    IVY_ASSERT(xdg_toplevel_manager != NULL, "[ERROR] IvyXdgTopLevelManager is NULL!");
+
+    wl_list_remove(&xdg_toplevel_manager->new_toplevel.link);
+}
+
 IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy)
 {
     IVY_ASSERT(server != NULL, "[WARNING] IvyServer is NULL!");

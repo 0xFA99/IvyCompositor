@@ -11,3 +11,10 @@ void Ivy_Shell_Init(IvyShell *shell)
     Ivy_XdgShell_Init(&shell->xdg_shell);
     Ivy_LayerShell_Init(&shell->layer_shell);
 }
+
+void Ivy_Shell_Destroy(IvyShell *shell)
+{
+    IVY_ASSERT(shell != NULL, "[ERROR] IvyShell is NULL!");
+
+    Ivy_XdgShell_Destroy(&shell->xdg_shell);
+}

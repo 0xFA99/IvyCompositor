@@ -60,3 +60,13 @@ static void IvyInput_HandleNewPointer(IvyCursor *cursor, struct wlr_input_device
 {
     wlr_cursor_attach_input_device(cursor->wlr_cursor, input_device);
 }
+
+void Ivy_Input_Destroy(IvyInput *input)
+{
+    IVY_ASSERT(input != NULL, "[ERROR] IvyInput is NULL!");
+
+    wl_list_remove(&input->new_input.link);
+
+    Ivy_Cursor_Destroy(&input->cursor);
+    Ivy_Seat_Destroy(&input->seat);
+}

@@ -23,6 +23,8 @@ struct IvyServer {
 };
 
 void Ivy_Server_Init(IvyServer *server);
+void Ivy_Server_Run(IvyServer *server, const char *startup_cmd);
+void Ivy_Server_Destroy(IvyServer *server);
 
 #ifdef __cplusplus
 }

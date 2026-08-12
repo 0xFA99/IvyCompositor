@@ -72,3 +72,11 @@ static void IvyXdgPopup_HandleDestroy(struct wl_listener *listener, void *data)
 
     free(popup);
 }
+
+void Ivy_XdgPopupManager_Destroy(IvyXdgPopupManager *popup_manager)
+{
+    IVY_ASSERT(popup_manager != NULL, "[ERROR] IvyXdgPopupManager is NULL!");
+
+    wl_list_remove(&popup_manager->new_popup.link);
+}
+

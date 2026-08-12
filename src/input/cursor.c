@@ -227,3 +227,18 @@ static void IvyCursor_HandlePointerFocusChange(struct wl_listener *listener, voi
     }
     cursor->focused_surface = event->new_surface;
 }
+
+void Ivy_Cursor_Destroy(IvyCursor *cursor)
+{
+    IVY_ASSERT(cursor != NULL, "[ERROR] IvyCursor is NULL!");
+
+    wl_list_remove(&cursor->motion.link);
+    wl_list_remove(&cursor->button.link);
+    wl_list_remove(&cursor->axis.link);
+    wl_list_remove(&cursor->frame.link);
+    wl_list_remove(&cursor->request_cursor.link);
+    wl_list_remove(&cursor->pointer_focus_change.link);
+
+    wlr_xcursor_manager_destroy(cursor->wlr_xcursor_manager);
+    wlr_cursor_destroy(cursor->wlr_cursor);
+}

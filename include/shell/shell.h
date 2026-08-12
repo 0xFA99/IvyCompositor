@@ -15,6 +15,7 @@ struct IvyShell {
 };
 
 void Ivy_Shell_Init(IvyShell *shell);
+void Ivy_Shell_Destroy(IvyShell *shell);
 
 #ifdef __cplusplus
 }

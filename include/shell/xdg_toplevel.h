@@ -36,6 +36,7 @@ struct IvyXdgTopLevelManager {
 };
 
 void Ivy_XdgTopLevelManager_Init(IvyXdgTopLevelManager *toplevel_manager);
+void Ivy_XdgTopLevelManager_Destroy(IvyXdgTopLevelManager *toplevel_manager);
 IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy);
 void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel);
 

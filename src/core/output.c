@@ -115,3 +115,12 @@ static void IvyOutput_HandleDestroy(struct wl_listener *listener, void *data)
 
     free(output);
 }
+
+void Ivy_OutputManager_Destroy(IvyOutputManager *manager)
+{
+    IVY_ASSERT(manager != NULL, "[ERROR] IvyOutputManager is NULL!");
+
+    wl_list_remove(&manager->new_output.link);
+    wlr_output_layout_destroy(manager->wlr_output_layout);
+}
+

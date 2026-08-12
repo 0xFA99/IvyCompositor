@@ -20,6 +20,7 @@ struct IvyScene
 };
 
 void Ivy_Scene_Init(IvyScene *scene);
+void Ivy_Scene_Destroy(IvyScene *scene);
 
 #ifdef __cplusplus
 }

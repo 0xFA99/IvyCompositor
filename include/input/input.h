@@ -22,6 +22,7 @@ struct IvyInput
 };
 
 void Ivy_Input_Init(IvyInput *input);
+void Ivy_Input_Destroy(IvyInput *input);
 
 #ifdef __cplusplus
 }

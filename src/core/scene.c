@@ -22,3 +22,11 @@ void Ivy_Scene_Init(IvyScene *scene)
 
     scene->wlr_scene_output_layout = wlr_scene_attach_output_layout(scene->wlr_scene, server->output_manager.wlr_output_layout);
 }
+
+void Ivy_Scene_Destroy(IvyScene *scene)
+{
+    IVY_ASSERT(scene != NULL, "[ERROR] IvyScene is NULL!");
+
+    wlr_scene_node_destroy(&scene->wlr_scene->tree.node);
+}
+

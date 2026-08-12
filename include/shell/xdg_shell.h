@@ -19,6 +19,7 @@ struct IvyXdgShell {
 };
 
 void Ivy_XdgShell_Init(IvyXdgShell *xdg_shell);
+void Ivy_XdgShell_Destroy(IvyXdgShell *xdg_shell);
 
 #ifdef __cplusplus
 }

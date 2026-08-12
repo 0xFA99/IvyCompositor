@@ -32,6 +32,7 @@ struct IvyOutputManager {
 };
 
 void Ivy_OutputManager_Init(IvyOutputManager *output_manager);
+void Ivy_OutputManager_Destroy(IvyOutputManager *output_manager);
 
 IvyOutput *Ivy_Output_Create(struct wlr_output *restrict wlr_output, IvyOutputManager *restrict manager);
 void Ivy_Output_Destroy(IvyOutput *output);

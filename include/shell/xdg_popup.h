@@ -25,6 +25,7 @@ struct IvyXdgPopupManager {
 };
 
 void Ivy_XdgPopupManager_Init(IvyXdgPopupManager *popup_manager);
+void Ivy_XdgPopupManager_Destroy(IvyXdgPopupManager *popup_manager);
 
 #ifdef __cplusplus
 }

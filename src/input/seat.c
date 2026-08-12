@@ -43,3 +43,10 @@ static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void
 
     wlr_seat_set_selection(seat->wlr_seat, event->source, event->serial);
 }
+
+void Ivy_Seat_Destroy(IvySeat *seat)
+{
+    IVY_ASSERT(seat != NULL, "[ERROR] IvySeat is NULL!");
+
+    wl_list_remove(&seat->request_set_selection.link);
+}

@@ -3,6 +3,7 @@
 #include "core/server.h"
 #include "input/seat.h"
 #include "input/keyboard.h"
+#include "shell/xdg_toplevel.h"
 
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_seat.h>
@@ -102,7 +103,7 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
             }
 
             IvyXdgTopLevel *next_toplevel = wl_container_of(server->shell.xdg_shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
-            // TODO: implement toplevel focus
+            Ivy_XdgTopLevel_Focus(next_toplevel);
             return true;
         }
         default: break;

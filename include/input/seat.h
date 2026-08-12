@@ -16,6 +16,7 @@ struct IvySeat {
 };
 
 void Ivy_Seat_Init(IvySeat *seat);
+void Ivy_Seat_Destroy(IvySeat *seat);
 void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restrict keyboard);
 
 #ifdef __cplusplus
