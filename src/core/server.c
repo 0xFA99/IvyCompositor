@@ -62,8 +62,8 @@ void Ivy_Server_Destroy(IvyServer *server)
     Ivy_OutputManager_Destroy(&server->output_manager);
     Ivy_Scene_Destroy(&server->scene);
 
-    // wlr_allocator_destroy(server->core.wlr_allocator);
-    // wlr_renderer_destroy(server->core.wlr_renderer);
+    wlr_allocator_destroy(server->core.wlr_allocator);
+    wlr_renderer_destroy(server->core.wlr_renderer);
     wlr_backend_destroy(server->core.wlr_backend);
     wl_display_destroy(server->core.wl_display);
 }

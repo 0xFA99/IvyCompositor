@@ -32,6 +32,7 @@ struct IvyCursor {
     struct wlr_cursor *wlr_cursor;
     struct wlr_xcursor_manager *wlr_xcursor_manager;
 
+    IvyServer *server;
     IvyInput *input;
 
     struct wlr_surface *focused_surface;

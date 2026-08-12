@@ -12,7 +12,7 @@ extern "C" {
 
 struct IvyLayerShell {
     struct wlr_layer_shell_v1 *wlr_layer_shell;
-    IvyLayerSurfaceManager surface_manager;
+    // IvyLayerSurfaceManager surface_manager;
 };
 
 void Ivy_LayerShell_Init(IvyLayerShell *layer_shell);

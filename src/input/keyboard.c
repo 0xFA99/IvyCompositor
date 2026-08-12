@@ -11,6 +11,8 @@
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define IVY_KEYBOARD_DEFAULT_RATE_HZ 25
 #define IVY_KEYBOARD_DEFAULT_DELAY_MS 600
@@ -20,19 +22,28 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, xkb_keysym_t s
 static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data);
 static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data);
 
+static void TEST_IvySpawn(const char *command)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (fork() == 0) {
+            setsid();
+            execl("/bin/sh", "sh", "-c", command, (char *)NULL);
+            _exit(EXIT_FAILURE);
+        }
+        _exit(EXIT_SUCCESS);
+    }
+    if (pid > 0) {
+        waitpid(pid, NULL, 0);
+    }
+}
+
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager)
 {
     IVY_ASSERT(keyboard_manager != NULL, "[ERROR] IvyKeyboardManager is NULL!");
 
     wl_list_init(&keyboard_manager->keyboards);
-}
-
-void Ivy_KeyboardManager_Insert(IvyKeyboardManager *restrict keyboard_manager, IvyKeyboard *restrict keyboard)
-{
-    IVY_ASSERT(keyboard_manager != NULL, "[ERROR] IvyKeyboardManager is NULL!");
-    IVY_ASSERT(keyboard != NULL, "[ERROR] IvyKeyboard is NULL!");
-
-    wl_list_insert(&keyboard_manager->keyboards, &keyboard->link);
+    keyboard_manager->current_keyboard = NULL;
 }
 
 IvyKeyboard *Ivy_Keyboard_Create(IvyKeyboardManager *keyboard_manager, struct wlr_input_device *input_device)
@@ -72,7 +83,6 @@ IvyKeyboard *Ivy_Keyboard_Create(IvyKeyboardManager *keyboard_manager, struct wl
     wl_signal_add(&input_device->events.destroy, &keyboard->destroy);
 
     wlr_seat_set_keyboard(server->input.seat.wlr_seat, keyboard->wlr_keyboard);
-
     wl_list_insert(&keyboard_manager->keyboards, &keyboard->link);
 
     return keyboard;
@@ -94,6 +104,12 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
     {
         case XKB_KEY_Escape: {
             wl_display_terminate(server->core.wl_display);
+            return true;
+        }
+
+        case XKB_KEY_u:
+        case XKB_KEY_U: {
+            TEST_IvySpawn("foot");
             return true;
         }
 

@@ -4,8 +4,6 @@
 #include "shell/layer_shell.h"
 #include "shell/layer_surface.h"
 
-#include <wayland-server-core.h>
-
 #define IVY_LAYER_SHELL_VERSION 4
 
 void Ivy_LayerShell_Init(IvyLayerShell *layer_shell)

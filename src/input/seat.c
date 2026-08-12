@@ -14,6 +14,7 @@
 #define IVY_SEAT_DEFAULT_NAME "seat0"
 
 static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void *data);
+// TODO: implement primary selection
 
 void Ivy_Seat_Init(IvySeat *seat)
 {
@@ -46,7 +47,12 @@ static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void
 
 void Ivy_Seat_Destroy(IvySeat *seat)
 {
-    IVY_ASSERT(seat != NULL, "[ERROR] IvySeat is NULL!");
+    if (seat == NULL) return;
 
     wl_list_remove(&seat->request_set_selection.link);
+
+    if (seat->wlr_seat) {
+        wlr_seat_destroy(seat->wlr_seat);
+        seat->wlr_seat = NULL;
+    }
 }
