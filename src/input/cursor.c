@@ -193,7 +193,8 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
     wlr_seat_pointer_notify_button(seat->wlr_seat, event->time_msec, event->button, event->state);
 
     if (event->state == WL_POINTER_BUTTON_STATE_RELEASED) {
-        // TODO: implementasikan reset mode grab jika perlu
+        cursor->grab.mode = IVY_CURSOR_PASSTHROUGH;
+        cursor->grab.toplevel = NULL;
     } else {
         double sx, sy;
         struct wlr_surface *surface = NULL;

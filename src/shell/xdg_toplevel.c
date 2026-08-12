@@ -61,7 +61,32 @@ IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double l
 void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
 {
     if (toplevel == NULL) return;
-    // TODO: implement toplevel focus
+
+    struct wlr_surface *prev_surface = toplevel->server->input.seat.wlr_seat->keyboard_state.focused_surface;
+    struct wlr_surface *surface = toplevel->wlr_xdg_toplevel->base->surface;
+
+    if (prev_surface == surface)
+        return;
+
+    if (prev_surface) {
+        struct wlr_xdg_toplevel *prev_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
+        if (prev_toplevel != NULL) {
+            wlr_xdg_toplevel_set_activated(prev_toplevel, false);
+        }
+    }
+
+    struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(toplevel->server->input.seat.wlr_seat);
+
+    wlr_scene_node_raise_to_top(&toplevel->wlr_scene_tree->node);
+    wl_list_remove(&toplevel->link);
+    wl_list_insert(&toplevel->server->shell.xdg_shell.xdg_toplevel_manager.toplevels, &toplevel->link);
+
+    wlr_xdg_toplevel_set_activated(toplevel->wlr_xdg_toplevel, true);
+
+    if (wlr_keyboard != NULL) {
+        wlr_seat_keyboard_notify_enter(toplevel->server->input.seat.wlr_seat, surface,
+            wlr_keyboard->keycodes, wlr_keyboard->num_keycodes, &wlr_keyboard->modifiers);
+    }
 }
 
 static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data)
@@ -79,6 +104,10 @@ static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener
     toplevel->server = server;
     toplevel->wlr_xdg_toplevel = wlr_toplevel;
 
+    toplevel->wlr_scene_tree = wlr_scene_xdg_surface_create(&server->scene.wlr_scene->tree, wlr_toplevel->base);
+    toplevel->wlr_scene_tree->node.data = toplevel;
+    wlr_toplevel->base->data = toplevel->wlr_scene_tree;
+
     toplevel->map.notify = IvyXdgTopLevel_HandleMap;
     wl_signal_add(&wlr_toplevel->base->surface->events.map, &toplevel->map);
 
@@ -90,8 +119,6 @@ static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener
 
     toplevel->destroy.notify = IvyXdgTopLevel_HandleDestroy;
     wl_signal_add(&wlr_toplevel->events.destroy, &toplevel->destroy);
-
-    wl_list_insert(&manager->toplevels, &toplevel->link);
 
     toplevel->request_move.notify = IvyXdgTopLevel_HandleRequestMove;
     wl_signal_add(&toplevel->wlr_xdg_toplevel->events.request_move, &toplevel->request_move);
@@ -108,17 +135,36 @@ static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener
 
 static void IvyXdgTopLevel_HandleMap(struct wl_listener *listener, void *data)
 {
-    // TODO: implement handle map.
+    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, map);
+
+    wl_list_insert(&toplevel->server->shell.xdg_shell.xdg_toplevel_manager.toplevels, &toplevel->link);
+
+    Ivy_XdgTopLevel_Focus(toplevel);
 }
 
 static void IvyXdgTopLevel_HandleUnmap(struct wl_listener *listener, void *data)
 {
-    // TODO: implement handle unmap.
+    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, unmap);
+    (void)data;
+
+    IvyCursor *cursor = &toplevel->server->input.cursor;
+
+    if (toplevel == cursor->grab.toplevel) {
+        cursor->grab.mode = IVY_CURSOR_PASSTHROUGH;
+        cursor->grab.toplevel = NULL;
+    }
+
+    wl_list_remove(&toplevel->link);
 }
 
 static void IvyXdgTopLevel_HandleCommit(struct wl_listener *listener, void *data)
 {
-    // TODO: implement handle commit.
+    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, commit);
+    (void)data;
+
+    if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
+        wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, 0, 0);
+    }
 }
 
 static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *data)
@@ -126,12 +172,15 @@ static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *dat
     IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, destroy);
     (void)data;
 
-    // wl_list_remove(&toplevel->map.link);
-    // wl_list_remove(&toplevel->unmap.link);
-    // wl_list_remove(&toplevel->commit.link);
+    wl_list_remove(&toplevel->map.link);
+    wl_list_remove(&toplevel->unmap.link);
+    wl_list_remove(&toplevel->commit.link);
     wl_list_remove(&toplevel->destroy.link);
 
-    wl_list_remove(&toplevel->link);
+    wl_list_remove(&toplevel->request_move.link);
+    wl_list_remove(&toplevel->request_resize.link);
+    wl_list_remove(&toplevel->request_maximize.link);
+    wl_list_remove(&toplevel->request_fullscreen.link);
 
     free(toplevel);
 }
@@ -139,6 +188,8 @@ static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *dat
 static void IvyXdgTopLevel_BeginInteractive(IvyXdgTopLevel *toplevel, IvyCursorMode mode, u32 edges)
 {
     IvyCursor *cursor = &toplevel->server->input.cursor;
+    cursor->grab.toplevel = toplevel;
+    cursor->grab.mode = mode;
 
     if (mode == IVY_CURSOR_MOVE)
     {
@@ -182,7 +233,9 @@ static void IvyXdgTopLevel_HandleRequestMaximize(struct wl_listener *listener, v
     IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, request_maximize);
     (void)data;
 
-    wlr_xdg_surface_schedule_configure(toplevel->wlr_xdg_toplevel->base);
+    if (toplevel->wlr_xdg_toplevel->base->initialized) {
+        wlr_xdg_surface_schedule_configure(toplevel->wlr_xdg_toplevel->base);
+    }
 }
 
 static void IvyXdgTopLevel_HandleRequestFullscreen(struct wl_listener *listener, void *data)

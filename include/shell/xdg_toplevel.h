@@ -9,6 +9,8 @@
 extern "C" {
 #endif
 
+struct wlr_surface;
+
 struct IvyXdgTopLevel
 {
     struct wlr_xdg_toplevel *wlr_xdg_toplevel;
@@ -26,7 +28,6 @@ struct IvyXdgTopLevel
     struct wl_listener request_resize;
     struct wl_listener request_maximize;
     struct wl_listener request_fullscreen;
-    struct wl_listener request_activate;
 };
 
 struct IvyXdgTopLevelManager {
