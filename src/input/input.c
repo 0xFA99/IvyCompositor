@@ -19,13 +19,13 @@ void Ivy_Input_Init(IvyInput *input)
 
     IvyServer *server = wl_container_of(input, server, input);
 
+    // seat
+    Ivy_Seat_Init(&input->seat);
+
     // keyboard manager
     Ivy_KeyboardManager_Init(&input->keyboard_manager);
 
     Ivy_Cursor_Init(&input->cursor, input);
-
-    // seat
-    Ivy_Seat_Init(&input->seat);
 
     input->new_input.notify = IvyInput_HandleNewInput;
     wl_signal_add(&server->core.wlr_backend->events.new_input, &input->new_input);

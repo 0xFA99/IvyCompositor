@@ -57,7 +57,6 @@ add_executable(${PROJECT_NAME}
 
         src/shell/shell.c
         src/shell/layer_shell.c
-        src/shell/layer_surface.c
         src/shell/xdg_shell.c
         src/shell/xdg_toplevel.c
         src/shell/xdg_popup.c

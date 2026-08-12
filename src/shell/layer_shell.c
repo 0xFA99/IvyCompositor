@@ -17,9 +17,9 @@ void Ivy_LayerShell_Init(IvyLayerShell *layer_shell)
     layer_shell->wlr_layer_shell = wlr_layer_shell_v1_create(server->core.wl_display, IVY_LAYER_SHELL_VERSION);
     IVY_CHECK(layer_shell != NULL, "[WARNING] Failed to create wlr_layer_shell!");
 
-    IvyLayerSurfaceManager *manager = &layer_shell->surface_manager;
-    wl_list_init(&manager->surfaces);
+    // IvyLayerSurfaceManager *manager = &layer_shell->surface_manager;
+    // wl_list_init(&manager->surfaces);
 
-    manager->new_surface.notify = Ivy_LayerSurfaceManager_HandleNewSurface;
-    wl_signal_add(&layer_shell->wlr_layer_shell->events.new_surface, &manager->new_surface);
+    // manager->new_surface.notify = Ivy_LayerSurfaceManager_HandleNewSurface;
+    // wl_signal_add(&layer_shell->wlr_layer_shell->events.new_surface, &manager->new_surface);
 }
