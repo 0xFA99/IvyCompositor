@@ -30,6 +30,7 @@ struct IvyKeyboardManager {
 
 IvyKeyboard *Ivy_Keyboard_Create(IvyKeyboardManager *keyboard_manager, struct wlr_input_device *input_device);
 void Ivy_KeyboardManager_Init(IvyKeyboardManager *keyboard_manager);
+void Ivy_KeyboardManager_Destroy(IvyKeyboardManager *keyboard_manager);
 
 #ifdef __cplusplus
 }

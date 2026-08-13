@@ -168,3 +168,17 @@ static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data)
 
     free(keyboard);
 }
+
+void Ivy_KeyboardManager_Destroy(IvyKeyboardManager *keyboard_manager)
+{
+    IVY_ASSERT(keyboard_manager != NULL, "[ERROR] IvyKeyboardManager is NULL!");
+
+    IvyKeyboard *keyboard, *tmp;
+    wl_list_for_each_safe(keyboard, tmp, &keyboard_manager->keyboards, link) {
+        wl_list_remove(&keyboard->modifiers.link);
+        wl_list_remove(&keyboard->key.link);
+        wl_list_remove(&keyboard->destroy.link);
+        wl_list_remove(&keyboard->link);
+        free(keyboard);
+    }
+}

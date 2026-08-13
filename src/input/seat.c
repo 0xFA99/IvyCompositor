@@ -8,13 +8,14 @@
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_primary_selection.h>
 
 #include <stdlib.h>
 
 #define IVY_SEAT_DEFAULT_NAME "seat0"
 
 static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void *data);
-// TODO: implement primary selection
+static void IvySeat_HandleRequestSetPrimarySelection(struct wl_listener *listener, void *data);
 
 void Ivy_Seat_Init(IvySeat *seat)
 {
@@ -27,6 +28,22 @@ void Ivy_Seat_Init(IvySeat *seat)
 
     seat->request_set_selection.notify = IvySeat_HandleRequestSetSelection;
     wl_signal_add(&seat->wlr_seat->events.request_set_selection, &seat->request_set_selection);
+
+    seat->request_set_primary_selection.notify = IvySeat_HandleRequestSetPrimarySelection;
+    wl_signal_add(&seat->wlr_seat->events.request_set_primary_selection, &seat->request_set_primary_selection);
+}
+
+void Ivy_Seat_Destroy(IvySeat *seat)
+{
+    if (seat == NULL) return;
+
+    wl_list_remove(&seat->request_set_selection.link);
+    wl_list_remove(&seat->request_set_primary_selection.link);
+
+    if (seat->wlr_seat) {
+        wlr_seat_destroy(seat->wlr_seat);
+        seat->wlr_seat = NULL;
+    }
 }
 
 void Ivy_Seat_SetKeyboard(const IvySeat *restrict seat, const IvyKeyboard *restrict keyboard)
@@ -45,14 +62,10 @@ static void IvySeat_HandleRequestSetSelection(struct wl_listener *listener, void
     wlr_seat_set_selection(seat->wlr_seat, event->source, event->serial);
 }
 
-void Ivy_Seat_Destroy(IvySeat *seat)
+static void IvySeat_HandleRequestSetPrimarySelection(struct wl_listener *listener, void *data)
 {
-    if (seat == NULL) return;
+    IvySeat *seat = wl_container_of(listener, seat, request_set_primary_selection);
+    const struct wlr_seat_request_set_primary_selection_event *event = data;
 
-    wl_list_remove(&seat->request_set_selection.link);
-
-    if (seat->wlr_seat) {
-        wlr_seat_destroy(seat->wlr_seat);
-        seat->wlr_seat = NULL;
-    }
+    wlr_seat_set_primary_selection(seat->wlr_seat, event->source, event->serial);
 }

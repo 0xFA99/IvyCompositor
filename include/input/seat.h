@@ -12,6 +12,7 @@ extern "C" {
 struct IvySeat {
     struct wlr_seat *wlr_seat;
     struct wl_listener request_set_selection;
+    struct wl_listener request_set_primary_selection;
 };
 
 void Ivy_Seat_Init(IvySeat *seat);

@@ -11,6 +11,7 @@
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_subcompositor.h>
+#include <wlr/types/wlr_primary_selection_v1.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -55,6 +56,9 @@ void Ivy_Core_Init(IvyCore *core)
     // (clipboard, drag-and-drop)
     struct wlr_data_device_manager *data_device_manager = wlr_data_device_manager_create(core->wl_display);
     IVY_CHECK(data_device_manager != NULL, "[WARNING] Failed to create wlr_data_device_manager!");
+
+    struct wlr_primary_selection_v1_device_manager *primary_selection_manager = wlr_primary_selection_v1_device_manager_create(core->wl_display);
+    IVY_CHECK(primary_selection_manager != NULL, "[WARNING] Failed to create wlr_primary_selection_v1_device_manager!");
 }
 
 void Ivy_Core_Start(IvyCore *core)

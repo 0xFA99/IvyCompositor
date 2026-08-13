@@ -67,6 +67,7 @@ void Ivy_Input_Destroy(IvyInput *input)
 
     wl_list_remove(&input->new_input.link);
 
+    Ivy_KeyboardManager_Destroy(&input->keyboard_manager);
     Ivy_Cursor_Destroy(&input->cursor);
     Ivy_Seat_Destroy(&input->seat);
 }
