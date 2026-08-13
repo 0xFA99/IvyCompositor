@@ -13,7 +13,7 @@ void Ivy_LayerShell_Init(IvyLayerShell *layer_shell)
     IvyServer *server = wl_container_of(layer_shell, server, shell.layer_shell);
 
     layer_shell->wlr_layer_shell = wlr_layer_shell_v1_create(server->core.wl_display, IVY_LAYER_SHELL_VERSION);
-    IVY_CHECK(layer_shell != NULL, "[WARNING] Failed to create wlr_layer_shell!");
+    IVY_CHECK(layer_shell->wlr_layer_shell != NULL, "[WARNING] Failed to create wlr_layer_shell!");
 
     // IvyLayerSurfaceManager *manager = &layer_shell->surface_manager;
     // wl_list_init(&manager->surfaces);

@@ -56,7 +56,7 @@ static void IvyXdgPopup_HandleCommit(struct wl_listener *listener, void *data)
     IvyXdgPopup *popup = wl_container_of(listener, popup, commit);
     (void)data;
 
-    if (popup->xdg_popup->base->initial_commit) {
+    if (popup->xdg_popup->base->initialized) {
         wlr_xdg_surface_schedule_configure(popup->xdg_popup->base);
     }
 }

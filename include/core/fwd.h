@@ -26,6 +26,8 @@ typedef struct IvyShell IvyShell;
 typedef struct IvyXdgShell IvyXdgShell;
 typedef struct IvyXdgTopLevelManager IvyXdgTopLevelManager;
 typedef struct IvyXdgTopLevel IvyXdgTopLevel;
+typedef struct IvyXdgDecoration IvyXdgDecoration;
+typedef struct IvyXdgDecorationManager IvyXdgDecorationManager;
 typedef struct IvyXdgPopupManager IvyXdgPopupManager;
 typedef struct IvyXdgPopup IvyXdgPopup;
 

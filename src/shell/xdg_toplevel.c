@@ -77,7 +77,7 @@ void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
 
     if (prev_surface) {
         struct wlr_xdg_toplevel *prev_toplevel = wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
-        if (prev_toplevel != NULL) {
+        if (prev_toplevel != NULL && prev_toplevel->base->initialized) {
             wlr_xdg_toplevel_set_activated(prev_toplevel, false);
         }
     }
@@ -88,7 +88,9 @@ void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
     wl_list_remove(&toplevel->link);
     wl_list_insert(&toplevel->server->shell.xdg_shell.xdg_toplevel_manager.toplevels, &toplevel->link);
 
-    wlr_xdg_toplevel_set_activated(toplevel->wlr_xdg_toplevel, true);
+    if (toplevel->wlr_xdg_toplevel->base->initialized) {
+        wlr_xdg_toplevel_set_activated(toplevel->wlr_xdg_toplevel, true);
+    }
 
     if (wlr_keyboard != NULL) {
         wlr_seat_keyboard_notify_enter(toplevel->server->input.seat.wlr_seat, surface,
@@ -170,7 +172,7 @@ static void IvyXdgTopLevel_HandleCommit(struct wl_listener *listener, void *data
     (void)data;
 
     if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
-        wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, 0, 0);
+        wlr_xdg_surface_schedule_configure(toplevel->wlr_xdg_toplevel->base);
     }
 }
 
