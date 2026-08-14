@@ -4,7 +4,8 @@
 #include "core/fwd.h"
 #include "input/seat.h"
 #include "input/keyboard.h"
-#include "input/cursor.h"
+#include "cursor/cursor.h"
+#include "cursor/shape.h"
 
 #include <wayland-server-core.h>
 
@@ -19,6 +20,7 @@ struct IvyInput
 
     IvyKeyboardManager keyboard_manager;
     IvyCursor cursor;
+    IvyCursorShape cursor_shape;
 };
 
 void Ivy_Input_Init(IvyInput *input);

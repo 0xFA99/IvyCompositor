@@ -9,6 +9,8 @@
 #include "shell/shell.h"
 #include "input/idle_inhibitor.h"
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,6 +22,8 @@ struct IvyServer {
     IvyShell         shell;
     IvyInput         input;
     IvyIdle          idle;
+
+    bool             is_terminating;
 };
 
 void Ivy_Server_Init(IvyServer *server);

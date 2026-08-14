@@ -17,6 +17,7 @@ typedef struct IvySeat IvySeat;
 typedef struct IvyKeyboardManager IvyKeyboardManager;
 typedef struct IvyKeyboard IvyKeyboard;
 typedef struct IvyCursor IvyCursor;
+typedef struct IvyCursorShape IvyCursorShape;
 
 typedef struct IvyIdle IvyIdle;
 typedef struct IvyIdleInhibitor IvyIdleInhibitor;
@@ -24,8 +25,8 @@ typedef struct IvyIdleInhibitorManager IvyIdleInhibitorManager;
 
 typedef struct IvyShell IvyShell;
 typedef struct IvyXdgShell IvyXdgShell;
-typedef struct IvyXdgTopLevelManager IvyXdgTopLevelManager;
-typedef struct IvyXdgTopLevel IvyXdgTopLevel;
+typedef struct IvyXdgToplevelManager IvyXdgToplevelManager;
+typedef struct IvyXdgToplevel IvyXdgToplevel;
 typedef struct IvyXdgDecoration IvyXdgDecoration;
 typedef struct IvyXdgDecorationManager IvyXdgDecorationManager;
 typedef struct IvyXdgToplevelIconManager IvyXdgToplevelIconManager;

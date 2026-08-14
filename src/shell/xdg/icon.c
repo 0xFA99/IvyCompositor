@@ -1,8 +1,8 @@
 #include "core/fwd.h"
 #include "core/types.h"
 #include "core/server.h"
-#include "shell/xdg_shell.h"
-#include "shell/xdg_toplevel_icon.h"
+#include "shell/xdg/shell.h"
+#include "shell/xdg/icon.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_xdg_toplevel_icon_v1.h>
@@ -57,10 +57,6 @@ static void IvyXdgToplevelIconManager_HandleSetIcon(struct wl_listener *listener
     }
 
     struct wlr_xdg_toplevel_icon_v1 *owned_icon = wlr_xdg_toplevel_icon_v1_ref(icon);
-
-    if (owned_icon->name != NULL) {
-        fprintf(stderr, "[icon] toplevel '%s' set icon name: %s\n", app_id, owned_icon->name);
-    }
 
     struct wlr_xdg_toplevel_icon_v1_buffer *icon_buffer;
     wl_list_for_each(icon_buffer, &owned_icon->buffers, link)

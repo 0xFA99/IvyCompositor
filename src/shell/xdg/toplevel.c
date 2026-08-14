@@ -1,45 +1,47 @@
 #include "core/fwd.h"
 #include "core/server.h"
-#include "shell/xdg_toplevel.h"
+#include "shell/xdg/toplevel.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_xdg_shell.h>
-
-#include <stdlib.h>
 #include <wlr/types/wlr_cursor.h>
 
-static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data);
+#include <stdlib.h>
 
-static void IvyXdgTopLevel_HandleMap(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleUnmap(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleCommit(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *data);
+static void IvyXdgToplevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data);
 
-static void IvyXdgTopLevel_BeginInteractive(IvyXdgTopLevel *toplevel, IvyCursorMode mode, u32 edges);
+static void IvyXdgToplevel_HandleMap(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleUnmap(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleCommit(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleDestroy(struct wl_listener *listener, void *data);
 
-static void IvyXdgTopLevel_HandleRequestMove(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleRequestResize(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleRequestMaximize(struct wl_listener *listener, void *data);
-static void IvyXdgTopLevel_HandleRequestFullscreen(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges);
 
-void Ivy_XdgTopLevelManager_Init(IvyXdgTopLevelManager *xdg_toplevel_manager)
+static void IvyXdgToplevel_HandleRequestMove(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleRequestResize(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleRequestMaximize(struct wl_listener *listener, void *data);
+static void IvyXdgToplevel_HandleRequestFullscreen(struct wl_listener *listener, void *data);
+
+static int Ivy_DelayedTerminateCallback(void *data);
+
+void Ivy_XdgToplevelManager_Init(IvyXdgToplevelManager *xdg_toplevel_manager)
 {
     IvyXdgShell *xdg_shell = wl_container_of(xdg_toplevel_manager, xdg_shell, xdg_toplevel_manager);
 
     wl_list_init(&xdg_toplevel_manager->toplevels);
 
-    xdg_toplevel_manager->new_toplevel.notify = IvyXdgTopLevelManager_HandleNewTopLevel;
+    xdg_toplevel_manager->new_toplevel.notify = IvyXdgToplevelManager_HandleNewTopLevel;
     wl_signal_add(&xdg_shell->wlr_xdg_shell->events.new_toplevel, &xdg_toplevel_manager->new_toplevel);
 }
 
-void Ivy_XdgTopLevelManager_Destroy(IvyXdgTopLevelManager *xdg_toplevel_manager)
+void Ivy_XdgToplevelManager_Destroy(IvyXdgToplevelManager *xdg_toplevel_manager)
 {
-    IVY_ASSERT(xdg_toplevel_manager != NULL, "[ERROR] IvyXdgTopLevelManager is NULL!");
+    IVY_ASSERT(xdg_toplevel_manager != NULL, "[ERROR] IvyXdgToplevelManager is NULL!");
 
     wl_list_remove(&xdg_toplevel_manager->new_toplevel.link);
 }
 
-IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy)
+IvyXdgToplevel *Ivy_XdgToplevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy)
 {
     IVY_ASSERT(server != NULL, "[WARNING] IvyServer is NULL!");
     IVY_ASSERT(surface != NULL, "[WARNING] wlr_surface is NULL!");
@@ -65,7 +67,7 @@ IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double l
     return tree->node.data;
 }
 
-void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
+void Ivy_XdgToplevel_Focus(IvyXdgToplevel *toplevel)
 {
     if (toplevel == NULL) return;
 
@@ -98,17 +100,17 @@ void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel)
     }
 }
 
-static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data)
+static void IvyXdgToplevelManager_HandleNewTopLevel(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevelManager *manager = wl_container_of(listener, manager, new_toplevel);
+    IvyXdgToplevelManager *manager = wl_container_of(listener, manager, new_toplevel);
     struct wlr_xdg_toplevel *wlr_toplevel = data;
 
     IvyXdgShell *xdg_shell = wl_container_of(manager, xdg_shell, xdg_toplevel_manager);
     IvyShell *shell = wl_container_of(xdg_shell, shell, xdg_shell);
     IvyServer *server = wl_container_of(shell, server, shell);
 
-    IvyXdgTopLevel *toplevel = calloc(1, sizeof(IvyXdgTopLevel));
-    IVY_CHECK(toplevel != NULL, "[WARNING] Failed to allocate IvyXdgTopLevel!");
+    IvyXdgToplevel *toplevel = calloc(1, sizeof(IvyXdgToplevel));
+    IVY_CHECK(toplevel != NULL, "[WARNING] Failed to allocate IvyXdgToplevel!");
 
     toplevel->server = server;
     toplevel->wlr_xdg_toplevel = wlr_toplevel;
@@ -117,43 +119,43 @@ static void IvyXdgTopLevelManager_HandleNewTopLevel(struct wl_listener *listener
     toplevel->wlr_scene_tree->node.data = toplevel;
     wlr_toplevel->base->data = toplevel->wlr_scene_tree;
 
-    toplevel->map.notify = IvyXdgTopLevel_HandleMap;
+    toplevel->map.notify = IvyXdgToplevel_HandleMap;
     wl_signal_add(&wlr_toplevel->base->surface->events.map, &toplevel->map);
 
-    toplevel->unmap.notify = IvyXdgTopLevel_HandleUnmap;
+    toplevel->unmap.notify = IvyXdgToplevel_HandleUnmap;
     wl_signal_add(&wlr_toplevel->base->surface->events.unmap, &toplevel->unmap);
 
-    toplevel->commit.notify = IvyXdgTopLevel_HandleCommit;
+    toplevel->commit.notify = IvyXdgToplevel_HandleCommit;
     wl_signal_add(&wlr_toplevel->base->surface->events.commit, &toplevel->commit);
 
-    toplevel->destroy.notify = IvyXdgTopLevel_HandleDestroy;
+    toplevel->destroy.notify = IvyXdgToplevel_HandleDestroy;
     wl_signal_add(&wlr_toplevel->events.destroy, &toplevel->destroy);
 
-    toplevel->request_move.notify = IvyXdgTopLevel_HandleRequestMove;
+    toplevel->request_move.notify = IvyXdgToplevel_HandleRequestMove;
     wl_signal_add(&toplevel->wlr_xdg_toplevel->events.request_move, &toplevel->request_move);
 
-    toplevel->request_resize.notify = IvyXdgTopLevel_HandleRequestResize;
+    toplevel->request_resize.notify = IvyXdgToplevel_HandleRequestResize;
     wl_signal_add(&toplevel->wlr_xdg_toplevel->events.request_resize, &toplevel->request_resize);
 
-    toplevel->request_maximize.notify = IvyXdgTopLevel_HandleRequestMaximize;
+    toplevel->request_maximize.notify = IvyXdgToplevel_HandleRequestMaximize;
     wl_signal_add(&toplevel->wlr_xdg_toplevel->events.request_maximize, &toplevel->request_maximize);
 
-    toplevel->request_fullscreen.notify = IvyXdgTopLevel_HandleRequestFullscreen;
+    toplevel->request_fullscreen.notify = IvyXdgToplevel_HandleRequestFullscreen;
     wl_signal_add(&toplevel->wlr_xdg_toplevel->events.request_fullscreen, &toplevel->request_fullscreen);
 }
 
-static void IvyXdgTopLevel_HandleMap(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleMap(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, map);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, map);
 
     wl_list_insert(&toplevel->server->shell.xdg_shell.xdg_toplevel_manager.toplevels, &toplevel->link);
 
-    Ivy_XdgTopLevel_Focus(toplevel);
+    Ivy_XdgToplevel_Focus(toplevel);
 }
 
-static void IvyXdgTopLevel_HandleUnmap(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleUnmap(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, unmap);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, unmap);
     (void)data;
 
     IvyCursor *cursor = &toplevel->server->input.cursor;
@@ -166,9 +168,9 @@ static void IvyXdgTopLevel_HandleUnmap(struct wl_listener *listener, void *data)
     wl_list_remove(&toplevel->link);
 }
 
-static void IvyXdgTopLevel_HandleCommit(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleCommit(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, commit);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, commit);
     (void)data;
 
     if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
@@ -176,9 +178,10 @@ static void IvyXdgTopLevel_HandleCommit(struct wl_listener *listener, void *data
     }
 }
 
-static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleDestroy(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, destroy);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, destroy);
+    const IvyServer *server = toplevel->server;
     (void)data;
 
     wl_list_remove(&toplevel->map.link);
@@ -192,9 +195,16 @@ static void IvyXdgTopLevel_HandleDestroy(struct wl_listener *listener, void *dat
     wl_list_remove(&toplevel->request_fullscreen.link);
 
     free(toplevel);
+
+    const IvyXdgToplevelManager *manager = &server->shell.xdg_shell.xdg_toplevel_manager;
+    if (server->is_terminating && wl_list_empty(&manager->toplevels)) {
+        struct wl_event_loop *loop = wl_display_get_event_loop(server->core.wl_display);
+        struct wl_event_source *source = wl_event_loop_add_timer(loop, Ivy_DelayedTerminateCallback, (void *)server);
+        wl_event_source_timer_update(source, 50);
+    }
 }
 
-static void IvyXdgTopLevel_BeginInteractive(IvyXdgTopLevel *toplevel, IvyCursorMode mode, u32 edges)
+static void IvyXdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges)
 {
     IvyCursor *cursor = &toplevel->server->input.cursor;
     cursor->grab.toplevel = toplevel;
@@ -221,25 +231,25 @@ static void IvyXdgTopLevel_BeginInteractive(IvyXdgTopLevel *toplevel, IvyCursorM
     cursor->grab.resize_edges = edges;
 }
 
-static void IvyXdgTopLevel_HandleRequestMove(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleRequestMove(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, request_move);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_move);
     (void)data;
 
-    IvyXdgTopLevel_BeginInteractive(toplevel, IVY_CURSOR_MOVE, 0);
+    IvyXdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_MOVE, 0);
 }
 
-static void IvyXdgTopLevel_HandleRequestResize(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleRequestResize(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, request_resize);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_resize);
     struct wlr_xdg_toplevel_resize_event *event = data;
 
-    IvyXdgTopLevel_BeginInteractive(toplevel, IVY_CURSOR_RESIZE, event->edges);
+    IvyXdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_RESIZE, event->edges);
 }
 
-static void IvyXdgTopLevel_HandleRequestMaximize(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleRequestMaximize(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, request_maximize);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_maximize);
     (void)data;
 
     if (toplevel->wlr_xdg_toplevel->base->initialized) {
@@ -247,12 +257,19 @@ static void IvyXdgTopLevel_HandleRequestMaximize(struct wl_listener *listener, v
     }
 }
 
-static void IvyXdgTopLevel_HandleRequestFullscreen(struct wl_listener *listener, void *data)
+static void IvyXdgToplevel_HandleRequestFullscreen(struct wl_listener *listener, void *data)
 {
-    IvyXdgTopLevel *toplevel = wl_container_of(listener, toplevel, request_fullscreen);
+    IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_fullscreen);
     (void)data;
 
     if (toplevel->wlr_xdg_toplevel->base->initialized) {
         wlr_xdg_surface_schedule_configure(toplevel->wlr_xdg_toplevel->base);
     }
+}
+
+static int Ivy_DelayedTerminateCallback(void *data)
+{
+    IvyServer *server = data;
+    wl_display_terminate(server->core.wl_display);
+    return 0;
 }

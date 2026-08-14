@@ -2,7 +2,7 @@
 #define IVY_SHELL_LAYER_SHELL_H
 
 #include "core/fwd.h"
-#include "shell/layer_surface.h"
+// #include "shell/layer_surface.h"
 
 #include <wlr/types/wlr_layer_shell_v1.h>
 

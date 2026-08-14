@@ -11,7 +11,7 @@ extern "C" {
 
 struct wlr_surface;
 
-struct IvyXdgTopLevel
+struct IvyXdgToplevel
 {
     struct wlr_xdg_toplevel *wlr_xdg_toplevel;
     struct wlr_scene_tree *wlr_scene_tree;
@@ -30,15 +30,15 @@ struct IvyXdgTopLevel
     struct wl_listener request_fullscreen;
 };
 
-struct IvyXdgTopLevelManager {
+struct IvyXdgToplevelManager {
     struct wl_list toplevels;
     struct wl_listener new_toplevel;
 };
 
-void Ivy_XdgTopLevelManager_Init(IvyXdgTopLevelManager *toplevel_manager);
-void Ivy_XdgTopLevelManager_Destroy(IvyXdgTopLevelManager *toplevel_manager);
-IvyXdgTopLevel *Ivy_XdgTopLevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy);
-void Ivy_XdgTopLevel_Focus(IvyXdgTopLevel *toplevel);
+void Ivy_XdgToplevelManager_Init(IvyXdgToplevelManager *toplevel_manager);
+void Ivy_XdgToplevelManager_Destroy(IvyXdgToplevelManager *toplevel_manager);
+IvyXdgToplevel *Ivy_XdgToplevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy);
+void Ivy_XdgToplevel_Focus(IvyXdgToplevel *toplevel);
 
 #ifdef __cplusplus
 }

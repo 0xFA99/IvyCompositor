@@ -1,6 +1,6 @@
 #include "core/server.h"
-#include "shell/layer_shell.h"
-#include "shell/layer_surface.h"
+#include "shell/layer/layer_shell.h"
+// #include "shell/layer_surface.h"
 
 #include <wayland-server-core.h>
 #include <wayland-util.h>

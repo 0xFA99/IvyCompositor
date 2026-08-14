@@ -2,8 +2,8 @@
 #define IVY_SHELL_H
 
 #include "core/fwd.h"
-#include "shell/xdg_shell.h"
-#include "shell/layer_shell.h"
+#include "xdg/shell.h"
+#include "layer/layer_shell.h"
 
 #ifdef __cplusplus
 extern "C" {

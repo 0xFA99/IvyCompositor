@@ -1,7 +1,7 @@
 #include "core/fwd.h"
 #include "core/types.h"
 #include "core/server.h"
-#include "shell/xdg_popup.h"
+#include "shell/xdg/popup.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_xdg_shell.h>

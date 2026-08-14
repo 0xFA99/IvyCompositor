@@ -3,7 +3,7 @@
 #include "core/types.h"
 #include "input/input.h"
 #include "input/keyboard.h"
-#include "input/cursor.h"
+#include "input/cursor/cursor.h"
 
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
@@ -26,6 +26,7 @@ void Ivy_Input_Init(IvyInput *input)
     Ivy_KeyboardManager_Init(&input->keyboard_manager);
 
     Ivy_Cursor_Init(&input->cursor, input);
+    Ivy_CursorShape_Init(&input->cursor_shape);
 
     input->new_input.notify = IvyInput_HandleNewInput;
     wl_signal_add(&server->core.wlr_backend->events.new_input, &input->new_input);
@@ -68,6 +69,7 @@ void Ivy_Input_Destroy(IvyInput *input)
     wl_list_remove(&input->new_input.link);
 
     Ivy_KeyboardManager_Destroy(&input->keyboard_manager);
+    Ivy_CursorShape_Destroy(&input->cursor_shape);
     Ivy_Cursor_Destroy(&input->cursor);
     Ivy_Seat_Destroy(&input->seat);
 }

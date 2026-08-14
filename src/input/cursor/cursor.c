@@ -2,7 +2,7 @@
 #include "core/types.h"
 #include "core/server.h"
 #include "input/seat.h"
-#include "input/cursor.h"
+#include "input/cursor/cursor.h"
 #include "input/input.h"
 
 #include <wlr/types/wlr_seat.h>
@@ -105,7 +105,7 @@ static void IvyCursor_ProcessPassthrough(const IvyCursor *cursor, const u32 time
 
     double sx, sy;
     struct wlr_surface *surface = NULL;
-    Ivy_XdgTopLevel_SurfaceAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
+    Ivy_XdgToplevel_SurfaceAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
 
     if (surface) {
         wlr_seat_pointer_notify_enter(seat->wlr_seat, surface, sx, sy);
@@ -118,7 +118,7 @@ static void IvyCursor_ProcessPassthrough(const IvyCursor *cursor, const u32 time
 
 static void IvyCursor_ProcessMove(const IvyCursor *cursor)
 {
-    const IvyXdgTopLevel *toplevel = cursor->grab.toplevel;
+    const IvyXdgToplevel *toplevel = cursor->grab.toplevel;
 
     wlr_scene_node_set_position(&toplevel->wlr_scene_tree->node,
         (int)(cursor->wlr_cursor->x - cursor->grab.x),
@@ -127,7 +127,7 @@ static void IvyCursor_ProcessMove(const IvyCursor *cursor)
 
 static void IvyCursor_ProcessResize(const IvyCursor *cursor)
 {
-    const IvyXdgTopLevel *toplevel = cursor->grab.toplevel;
+    const IvyXdgToplevel *toplevel = cursor->grab.toplevel;
 
     const double border_x = cursor->wlr_cursor->x - cursor->grab.x;
     const double border_y = cursor->wlr_cursor->y - cursor->grab.y;
@@ -206,9 +206,9 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
     } else {
         double sx, sy;
         struct wlr_surface *surface = NULL;
-        IvyXdgTopLevel *toplevel = Ivy_XdgTopLevel_SurfaceAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
+        IvyXdgToplevel *toplevel = Ivy_XdgToplevel_SurfaceAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
 
-        Ivy_XdgTopLevel_Focus(toplevel);
+        Ivy_XdgToplevel_Focus(toplevel);
     }
 }
 

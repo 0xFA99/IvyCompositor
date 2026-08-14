@@ -2,10 +2,10 @@
 #define IVY_CORE_XDG_SHELL_H
 
 #include "core/fwd.h"
-#include "shell/xdg_toplevel.h"
-#include "shell/xdg_decoration.h"
-#include "shell/xdg_toplevel_icon.h"
-#include "shell/xdg_popup.h"
+#include "shell/xdg/toplevel.h"
+#include "shell/xdg/decoration.h"
+#include "shell/xdg/icon.h"
+#include "shell/xdg/popup.h"
 
 #include <wlr/types/wlr_xdg_shell.h>
 
@@ -16,7 +16,7 @@ extern "C" {
 struct IvyXdgShell {
     struct wlr_xdg_shell *wlr_xdg_shell;
 
-    IvyXdgTopLevelManager xdg_toplevel_manager;
+    IvyXdgToplevelManager xdg_toplevel_manager;
     IvyXdgDecorationManager xdg_decoration_manager;
     IvyXdgToplevelIconManager xdg_icon_manager;
     IvyXdgPopupManager xdg_popup_manager;

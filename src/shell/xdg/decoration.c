@@ -2,7 +2,7 @@
 #include "core/types.h"
 #include "core/server.h"
 #include "shell/shell.h"
-#include "shell/xdg_decoration.h"
+#include "shell/xdg/decoration.h"
 
 #include <wayland-server-core.h>
 #include <wlr/types/wlr_xdg_decoration_v1.h>

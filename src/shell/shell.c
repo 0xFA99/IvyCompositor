@@ -1,8 +1,8 @@
 #include "core/fwd.h"
 #include "core/types.h"
 #include "shell/shell.h"
-#include "shell/xdg_shell.h"
-#include "shell/layer_shell.h"
+#include "shell/xdg/shell.h"
+#include "shell/layer/layer_shell.h"
 
 void Ivy_Shell_Init(IvyShell *shell)
 {

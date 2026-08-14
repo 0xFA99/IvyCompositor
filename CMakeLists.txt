@@ -51,17 +51,18 @@ add_executable(${PROJECT_NAME}
 
         src/input/input.c
         src/input/seat.c
-        src/input/cursor.c
+        src/input/cursor/cursor.c
+        src/input/cursor/shape.c
         src/input/keyboard.c
         src/input/idle_inhibitor.c
 
         src/shell/shell.c
-        src/shell/layer_shell.c
-        src/shell/xdg_shell.c
-        src/shell/xdg_toplevel.c
-        src/shell/xdg_decoration.c
-        src/shell/xdg_toplevel_icon.c
-        src/shell/xdg_popup.c
+        src/shell/layer/layer_shell.c
+        src/shell/xdg/shell.c
+        src/shell/xdg/toplevel.c
+        src/shell/xdg/decoration.c
+        src/shell/xdg/icon.c
+        src/shell/xdg/popup.c
 
         ${PROTOCOL_HEADERS}
 )

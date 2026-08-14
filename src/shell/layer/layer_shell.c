@@ -1,8 +1,8 @@
 #include "core/fwd.h"
 #include "core/types.h"
 #include "core/server.h"
-#include "shell/layer_shell.h"
-#include "shell/layer_surface.h"
+#include "shell/layer/layer_shell.h"
+#include "shell/layer/layer_surface.h"
 
 #define IVY_LAYER_SHELL_VERSION 4
 

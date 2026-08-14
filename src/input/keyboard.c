@@ -3,11 +3,12 @@
 #include "core/server.h"
 #include "input/seat.h"
 #include "input/keyboard.h"
-#include "shell/xdg_toplevel.h"
+#include "shell/xdg/toplevel.h"
 
 #include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_input_device.h>
+#include <wlr/types/wlr_xdg_shell.h>
 #include <xkbcommon/xkbcommon.h>
 
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 #define IVY_KEYBOARD_DEFAULT_DELAY_MS 600
 
 static void IvyKeyboard_HandleModifiers(struct wl_listener *listener, void *data);
-static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, xkb_keysym_t sym);
+static bool IvyKeyboard_HandleKeybinding(IvyServer *server, xkb_keysym_t sym);
 static void IvyKeyboard_HandleKey(struct wl_listener *listener, void *data);
 static void IvyKeyboard_HandleDestroy(struct wl_listener *listener, void *data);
 
@@ -98,12 +99,25 @@ static void IvyKeyboard_HandleModifiers(struct wl_listener *listener, void *data
     wlr_seat_keyboard_notify_modifiers(seat->wlr_seat, &keyboard->wlr_keyboard->modifiers);
 }
 
-static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keysym_t sym)
+static bool IvyKeyboard_HandleKeybinding(IvyServer *server, const xkb_keysym_t sym)
 {
     switch (sym)
     {
         case XKB_KEY_Escape: {
-            wl_display_terminate(server->core.wl_display);
+            const IvyXdgToplevelManager *manager = &server->shell.xdg_shell.xdg_toplevel_manager;
+
+            if (wl_list_empty(&manager->toplevels)) {
+                wl_display_terminate(server->core.wl_display);
+                return true;
+            }
+
+            server->is_terminating = true;
+
+            IvyXdgToplevel *toplevel, *temp;
+            wl_list_for_each_safe(toplevel, temp, &manager->toplevels, link) {
+                wlr_xdg_toplevel_send_close(toplevel->wlr_xdg_toplevel);
+            }
+
             return true;
         }
 
@@ -118,8 +132,8 @@ static bool IvyKeyboard_HandleKeybinding(const IvyServer *server, const xkb_keys
                 break;
             }
 
-            IvyXdgTopLevel *next_toplevel = wl_container_of(server->shell.xdg_shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
-            Ivy_XdgTopLevel_Focus(next_toplevel);
+            IvyXdgToplevel *next_toplevel = wl_container_of(server->shell.xdg_shell.xdg_toplevel_manager.toplevels.prev, next_toplevel, link);
+            Ivy_XdgToplevel_Focus(next_toplevel);
             return true;
         }
         default: break;

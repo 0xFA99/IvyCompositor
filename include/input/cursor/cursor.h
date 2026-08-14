@@ -22,7 +22,7 @@ typedef enum {
 
 typedef struct {
     IvyCursorMode   mode;
-    IvyXdgTopLevel  *toplevel;
+    IvyXdgToplevel  *toplevel;
     double          x, y;
     struct wlr_box  geo_box;
     u32             resize_edges;
