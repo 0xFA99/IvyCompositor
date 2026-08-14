@@ -2,7 +2,8 @@
 #define IVY_SHELL_H
 
 #include "core/fwd.h"
-#include "xdg/shell.h"
+#include "shell/xdg/shell.h"
+#include "shell/xdg/activation.h"
 #include "layer/layer_shell.h"
 
 #ifdef __cplusplus
@@ -11,6 +12,7 @@ extern "C" {
 
 struct IvyShell {
     IvyXdgShell xdg_shell;
+    IvyXdgActivation xdg_activation;
     IvyLayerShell layer_shell;
 };
 

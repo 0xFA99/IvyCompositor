@@ -30,6 +30,7 @@ typedef struct IvyXdgToplevel IvyXdgToplevel;
 typedef struct IvyXdgDecoration IvyXdgDecoration;
 typedef struct IvyXdgDecorationManager IvyXdgDecorationManager;
 typedef struct IvyXdgToplevelIconManager IvyXdgToplevelIconManager;
+typedef struct IvyXdgActivation IvyXdgActivation;
 typedef struct IvyXdgPopupManager IvyXdgPopupManager;
 typedef struct IvyXdgPopup IvyXdgPopup;
 

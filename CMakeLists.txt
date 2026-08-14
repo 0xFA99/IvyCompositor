@@ -62,6 +62,7 @@ add_executable(${PROJECT_NAME}
         src/shell/xdg/toplevel.c
         src/shell/xdg/decoration.c
         src/shell/xdg/icon.c
+        src/shell/xdg/activation.c
         src/shell/xdg/popup.c
 
         ${PROTOCOL_HEADERS}
