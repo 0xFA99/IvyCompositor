@@ -4,6 +4,7 @@
 #include "core/fwd.h"
 #include "shell/xdg_toplevel.h"
 #include "shell/xdg_decoration.h"
+#include "shell/xdg_toplevel_icon.h"
 #include "shell/xdg_popup.h"
 
 #include <wlr/types/wlr_xdg_shell.h>
@@ -17,6 +18,7 @@ struct IvyXdgShell {
 
     IvyXdgTopLevelManager xdg_toplevel_manager;
     IvyXdgDecorationManager xdg_decoration_manager;
+    IvyXdgToplevelIconManager xdg_icon_manager;
     IvyXdgPopupManager xdg_popup_manager;
 };
 

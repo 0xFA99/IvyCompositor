@@ -2,6 +2,7 @@
 #include "core/types.h"
 #include "core/server.h"
 #include "shell/xdg_shell.h"
+#include "shell/xdg_toplevel_icon.h"
 
 #include <wayland-util.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -20,6 +21,7 @@ void Ivy_XdgShell_Init(IvyXdgShell *xdg_shell)
 
     Ivy_XdgTopLevelManager_Init(&xdg_shell->xdg_toplevel_manager);
     Ivy_XdgDecorationManager_Init(&xdg_shell->xdg_decoration_manager);
+    Ivy_XdgToplevelIconManager_Init(&xdg_shell->xdg_icon_manager);
     Ivy_XdgPopupManager_Init(&xdg_shell->xdg_popup_manager);
 }
 
@@ -29,6 +31,7 @@ void Ivy_XdgShell_Destroy(IvyXdgShell *xdg_shell)
 
     Ivy_XdgTopLevelManager_Destroy(&xdg_shell->xdg_toplevel_manager);
     Ivy_XdgDecorationManager_Destroy(&xdg_shell->xdg_decoration_manager);
+    Ivy_XdgToplevelIconManager_Destroy(&xdg_shell->xdg_icon_manager);
     Ivy_XdgPopupManager_Destroy(&xdg_shell->xdg_popup_manager);
 }
 
