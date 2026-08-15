@@ -87,6 +87,7 @@ void Ivy_Core_StartSocket(IvyCore *core)
     if (!wlr_backend_start(core->wlr_backend)) {
         wlr_backend_destroy(core->wlr_backend);
         wl_display_destroy(core->wl_display);
+        return;
     }
 
     bool status = wlr_backend_start(core->wlr_backend);

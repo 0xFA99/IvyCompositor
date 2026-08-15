@@ -19,5 +19,6 @@ void Ivy_Shell_Destroy(IvyShell *shell)
     IVY_ASSERT(shell != NULL, "[ERROR] IvyShell is NULL!");
 
     Ivy_XdgActivation_Destroy(&shell->xdg_activation);
+    Ivy_LayerShell_Destroy(&shell->layer_shell);
     Ivy_XdgShell_Destroy(&shell->xdg_shell);
 }

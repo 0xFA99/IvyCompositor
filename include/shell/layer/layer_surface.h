@@ -15,6 +15,7 @@ struct IvyLayerSurface {
     struct wlr_layer_surface_v1 *wlr_layer_surface;
     struct wlr_scene_layer_surface_v1 *wlr_scene_layer_surface;
 
+    IvyServer *server;
     struct wl_list link;
 
     struct wl_listener map;

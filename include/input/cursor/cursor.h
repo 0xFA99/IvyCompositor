@@ -51,7 +51,6 @@ struct IvyCursor {
 
 void Ivy_Cursor_Init(IvyCursor *cursor, IvyInput *input);
 void Ivy_Cursor_Destroy(IvyCursor *cursor);
-void Ivy_Cursor_UpdateScale(IvyCursor *cursor, float scale);
 
 #ifdef __cplusplus
 }
