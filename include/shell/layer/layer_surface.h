@@ -12,16 +12,18 @@ extern "C" {
 #endif
 
 struct IvyLayerSurface {
-    struct wlr_layer_surface_v1 *wlr_layer_surface;
-    struct wlr_scene_layer_surface_v1 *wlr_scene_layer_surface;
+    struct wlr_layer_surface_v1         *wlr_layer_surface;
+    struct wlr_scene_layer_surface_v1   *wlr_scene_layer_surface;
 
-    IvyServer *server;
-    struct wl_list link;
+    IvyServer          *server;
+    struct wl_list      link;
 
-    struct wl_listener map;
-    struct wl_listener unmap;
-    struct wl_listener commit;
-    struct wl_listener destroy;
+    struct wlr_box      usable_area;
+
+    struct wl_listener  map;
+    struct wl_listener  unmap;
+    struct wl_listener  commit;
+    struct wl_listener  destroy;
 };
 
 struct IvyLayerSurfaceManager {
@@ -29,7 +31,7 @@ struct IvyLayerSurfaceManager {
     struct wl_listener new_surface;
 };
 
-void Ivy_LayerSurfaceManager_HandleNewSurface(struct wl_listener *listener, void *data);
+void Ivy_LayerSurfaceManager_Init(IvyLayerSurfaceManager *manager);
 
 #ifdef __cplusplus
 }

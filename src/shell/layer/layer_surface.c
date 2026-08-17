@@ -5,18 +5,32 @@
 #include <wayland-server-core.h>
 #include <wayland-util.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_scene.h>
 
 #include <stdlib.h>
-#include <wlr/types/wlr_output_layout.h>
 
 static void IvyLayerSurface_Configure(IvyLayerSurface *layer_surface);
 
+static void IvyLayerSurface_HandleNewSurface(struct wl_listener *listener, void *data);
 static void IvyLayerSurface_HandleMap(struct wl_listener *listener, void *data);
 static void IvyLayerSurface_HandleUnmap(struct wl_listener *listener, void *data);
 static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *data);
 static void IvyLayerSurface_HandleDestroy(struct wl_listener *listener, void *data);
 
-void Ivy_LayerSurfaceManager_HandleNewSurface(struct wl_listener *listener, void *data)
+void Ivy_LayerSurfaceManager_Init(IvyLayerSurfaceManager *manager)
+{
+    IVY_ASSERT(manager != NULL, "[ERROR] IvyLayerSurfaceManager is NULL!");
+
+    IvyLayerShell *layer_shell = wl_container_of(manager, layer_shell, surface_manager);
+
+    wl_list_init(&manager->surfaces);
+
+    manager->new_surface.notify = IvyLayerSurface_HandleNewSurface;
+    wl_signal_add(&layer_shell->wlr_layer_shell->events.new_surface, &manager->new_surface);
+}
+
+static void IvyLayerSurface_HandleNewSurface(struct wl_listener *listener, void *data)
 {
     IvyLayerSurfaceManager *surface_manager = wl_container_of(listener, surface_manager, new_surface);
     struct wlr_layer_surface_v1 *wlr_layer_surface = data;
@@ -34,13 +48,14 @@ void Ivy_LayerSurfaceManager_HandleNewSurface(struct wl_listener *listener, void
     switch (wlr_layer_surface->pending.layer)
     {
         case ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND: parent_tree = server->scene.background; break;
-        case ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM:     parent_tree = server->scene.bottom; break;
-        case ZWLR_LAYER_SHELL_V1_LAYER_TOP:        parent_tree = server->scene.top; break;
-        case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:    parent_tree = server->scene.overlay; break;
-        default:                                   parent_tree = server->scene.top; break;
+        case ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM:     parent_tree = server->scene.bottom;     break;
+        case ZWLR_LAYER_SHELL_V1_LAYER_TOP:        parent_tree = server->scene.top;        break;
+        case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:    parent_tree = server->scene.overlay;    break;
+        default:                                   parent_tree = server->scene.top;        break;
     }
 
     layer_surface->wlr_scene_layer_surface = wlr_scene_layer_surface_v1_create(parent_tree, wlr_layer_surface);
+    layer_surface->wlr_scene_layer_surface->tree->node.data = layer_surface;
 
     layer_surface->map.notify = IvyLayerSurface_HandleMap;
     wl_signal_add(&wlr_layer_surface->surface->events.map, &layer_surface->map);
@@ -79,8 +94,12 @@ static void IvyLayerSurface_Configure(IvyLayerSurface *layer_surface)
     struct wlr_box full_area;
     wlr_output_layout_get_box(server->output_manager.wlr_output_layout, output, &full_area);
 
-    struct wlr_box usable_area = full_area;
-    wlr_scene_layer_surface_v1_configure(layer_surface->wlr_scene_layer_surface, &full_area, &usable_area);
+    layer_surface->usable_area = full_area;
+    wlr_scene_layer_surface_v1_configure(
+        layer_surface->wlr_scene_layer_surface,
+        &full_area,
+        &layer_surface->usable_area
+    );
 }
 
 static void IvyLayerSurface_HandleMap(struct wl_listener *listener, void *data)
@@ -93,8 +112,10 @@ static void IvyLayerSurface_HandleMap(struct wl_listener *listener, void *data)
 
 static void IvyLayerSurface_HandleUnmap(struct wl_listener *listener, void *data)
 {
-    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, map);
-    // TODO: implement layer surface unmap
+    IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, unmap);
+    (void)data;
+
+    layer_surface->usable_area = (struct wlr_box){0};
 }
 
 static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *data)
@@ -104,18 +125,34 @@ static void IvyLayerSurface_HandleCommit(struct wl_listener *listener, void *dat
 
     struct wlr_layer_surface_v1 *wlr_layer_surface = layer_surface->wlr_layer_surface;
 
-    if (wlr_layer_surface->initial_commit)
-    {
+    if (wlr_layer_surface->initial_commit) {
         IvyLayerSurface_Configure(layer_surface);
         return;
     }
 
-    IvyLayerSurface_Configure(layer_surface);
+    if (wlr_layer_surface->current.committed != 0) {
+        if (wlr_layer_surface->current.committed & WLR_LAYER_SURFACE_V1_STATE_LAYER) {
+            IvyServer *server = layer_surface->server;
+            struct wlr_scene_tree *new_parent;
+            switch (wlr_layer_surface->current.layer)
+            {
+                case ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND: new_parent = server->scene.background; break;
+                case ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM:     new_parent = server->scene.bottom;     break;
+                case ZWLR_LAYER_SHELL_V1_LAYER_TOP:        new_parent = server->scene.top;        break;
+                case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:    new_parent = server->scene.overlay;    break;
+                default:                                   new_parent = server->scene.top;        break;
+            }
+            wlr_scene_node_reparent(&layer_surface->wlr_scene_layer_surface->tree->node, new_parent);
+        }
+
+        IvyLayerSurface_Configure(layer_surface);
+    }
 }
 
 static void IvyLayerSurface_HandleDestroy(struct wl_listener *listener, void *data)
 {
     IvyLayerSurface *layer_surface = wl_container_of(listener, layer_surface, destroy);
+    (void)data;
 
     wl_list_remove(&layer_surface->map.link);
     wl_list_remove(&layer_surface->unmap.link);
@@ -126,3 +163,5 @@ static void IvyLayerSurface_HandleDestroy(struct wl_listener *listener, void *da
 
     free(layer_surface);
 }
+
+
