@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(WAYLAND_SERVER REQUIRED wayland-server)
-pkg_check_modules(WLROOTS REQUIRED wlroots-0.20)
+pkg_check_modules(WLROOTS REQUIRED wlroots-0.19)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
 # XWayland
@@ -23,9 +23,43 @@ find_path(WLR_PROTOCOLS_UNSTABLE_XML_DIR
         REQUIRED
 )
 
+find_path(CURSOR_SHAPE_XML_DIR
+        NAMES cursor-shape-v1.xml
+        PATHS /usr/share/wayland-protocols/staging/cursor-shape
+        /usr/local/share/wayland-protocols/staging/cursor-shape
+        REQUIRED
+)
+
+find_path(XDG_SHELL_XML_DIR
+        NAMES xdg-shell.xml
+        PATHS /usr/share/wayland-protocols/stable/xdg-shell
+        /usr/local/share/wayland-protocols/stable/xdg-shell
+        REQUIRED
+)
+
 set(PROTOCOL_HEADERS
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-layer-shell-unstable-v1-protocol.h"
         "${CMAKE_CURRENT_BINARY_DIR}/wlr-output-power-management-unstable-v1-protocol.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/cursor-shape-v1-protocol.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/xdg-shell-protocol.h"
+)
+
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/xdg-shell-protocol.h"
+        COMMAND wayland-scanner server-header
+        "${XDG_SHELL_XML_DIR}/xdg-shell.xml"
+        "${CMAKE_CURRENT_BINARY_DIR}/xdg-shell-protocol.h"
+        DEPENDS "${XDG_SHELL_XML_DIR}/xdg-shell.xml"
+        COMMENT "Generating xdg-shell protocol header..."
+)
+
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cursor-shape-v1-protocol.h"
+        COMMAND wayland-scanner server-header
+        "${CURSOR_SHAPE_XML_DIR}/cursor-shape-v1.xml"
+        "${CMAKE_CURRENT_BINARY_DIR}/cursor-shape-v1-protocol.h"
+        DEPENDS "${CURSOR_SHAPE_XML_DIR}/cursor-shape-v1.xml"
+        COMMENT "Generating cursor-shape-v1 protocol header..."
 )
 
 add_custom_command(
