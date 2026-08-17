@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(WAYLAND_SERVER REQUIRED wayland-server)
-pkg_check_modules(WLROOTS REQUIRED wlroots-0.19)
+pkg_check_modules(WLROOTS REQUIRED wlroots-0.20)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
 # XWayland
