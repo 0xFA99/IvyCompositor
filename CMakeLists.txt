@@ -11,6 +11,11 @@ pkg_check_modules(WAYLAND_SERVER REQUIRED wayland-server)
 pkg_check_modules(WLROOTS REQUIRED wlroots-0.20)
 pkg_check_modules(XKBCOMMON REQUIRED xkbcommon)
 
+# XWayland
+pkg_check_modules(XCB REQUIRED xcb)
+pkg_check_modules(XCB_ICCCM REQUIRED xcb-icccm)
+pkg_check_modules(XCB_EWMH REQUIRED xcb-ewmh)
+
 find_path(WLR_PROTOCOLS_UNSTABLE_XML_DIR
         NAMES wlr-layer-shell-unstable-v1.xml
         PATHS /usr/share/wlr-protocols/unstable
@@ -66,6 +71,9 @@ add_executable(${PROJECT_NAME}
         src/shell/xdg/activation.c
         src/shell/xdg/popup.c
 
+        src/shell/xwayland/xwayland.c
+        src/shell/xwayland/surface.c
+
         ${PROTOCOL_HEADERS}
 )
 
@@ -75,6 +83,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE
         ${WAYLAND_SERVER_INCLUDE_DIRS}
         ${WLROOTS_INCLUDE_DIRS}
         ${XKBCOMMON_INCLUDE_DIRS}
+        ${XCB_INCLUDE_DIRS}
+        ${XCB_ICCCM_INCLUDE_DIRS}
+        ${XCB_EWMH_INCLUDE_DIRS}
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE WLR_USE_UNSTABLE)
@@ -91,10 +102,16 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         ${WAYLAND_SERVER_LIBRARIES}
         ${WLROOTS_LIBRARIES}
         ${XKBCOMMON_LIBRARIES}
+        ${XCB_LIBRARIES}
+        ${XCB_ICCCM_LIBRARIES}
+        ${XCB_EWMH_LIBRARIES}
 )
 
 target_link_directories(${PROJECT_NAME} PRIVATE
         ${WAYLAND_SERVER_LIBRARY_DIRS}
         ${WLROOTS_LIBRARY_DIRS}
         ${XKBCOMMON_LIBRARY_DIRS}
+        ${XCB_LIBRARY_DIRS}
+        ${XCB_ICCCM_LIBRARY_DIRS}
+        ${XCB_EWMH_LIBRARY_DIRS}
 )
