@@ -110,45 +110,103 @@ static void IvyXwaylandSurface_HandleDestroy(struct wl_listener *listener, void 
 
 static void IvyXwaylandSurface_HandleMap(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, map);
+    struct wlr_xwayland_surface *xsurface = surface->wlr_xwayland_surface;
+    (void)data;
 
+    IvyServer *server = surface->server;
+
+    struct wlr_scene_tree *parent_tree = xsurface->override_redirect ? server->scene.top : server->scene.toplevel;
+    surface->wlr_scene_tree = wlr_scene_tree_create(parent_tree);
+    wlr_scene_surface_create(surface->wlr_scene_tree, xsurface->surface);
+    surface->wlr_scene_tree->node.data = surface;
+
+    wlr_scene_node_set_position(&surface->wlr_scene_tree->node, xsurface->x, xsurface->y);
+    wl_list_insert(&server->shell.xwayland.surface, &surface->link);
+
+    if (!xsurface->override_redirect) {
+        Ivy_Xwayland_Focus(surface);
+    } else if (wlr_xwayland_surface_override_redirect_wants_focus(xsurface))
+    {
+        Ivy_Xwayland_Focus(surface);
+    }
 }
 
 static void IvyXwaylandSurface_HandleUnmap(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, unmap);
+    (void)data;
 
+    wl_list_remove(&surface->link);
+
+    if (surface->wlr_scene_tree != NULL) {
+        wlr_scene_node_destroy(&surface->wlr_scene_tree->node);
+        surface->wlr_scene_tree = NULL;
+    }
 }
 
 static void IvyXwaylandSurface_HandleCommit(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, commit);
+    struct wlr_xwayland_surface *xsurface = surface->wlr_xwayland_surface;
+    (void)data;
 
+    if (surface->wlr_scene_tree != NULL) {
+        wlr_scene_node_set_position(&surface->wlr_scene_tree->node, xsurface->x, xsurface->y);
+    }
 }
 
 static void IvyXwaylandSurface_HandleRequestConfigure(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_configure);
+    struct wlr_xwayland_surface_configure_event *event = data;
 
+    wlr_xwayland_surface_configure(surface->wlr_xwayland_surface, event->x, event->y, event->width, event->height);
+
+    if (surface->wlr_scene_tree != NULL) {
+        wlr_scene_node_set_position(&surface->wlr_scene_tree->node, event->x, event->y);
+    }
 }
 
 static void IvyXwaylandSurface_HandleRequestMove(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_move);
+    (void)data;
 
+    // TODO: implement interactive move
 }
 
 static void IvyXwaylandSurface_HandleRequestResize(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_resize);
+    (void)data;
 
+    // TODO: implement interactive resize
 }
 
 static void IvyXwaylandSurface_HandleRequestMaximize(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_maximize);
+    (void)data;
 
+    wlr_xwayland_surface_set_maximized(
+        surface->wlr_xwayland_surface,
+        surface->wlr_xwayland_surface->maximized_horz,
+        surface->wlr_xwayland_surface->maximized_vert);
 }
 
 static void IvyXwaylandSurface_HandleRequestFullscreen(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_fullscreen);
+    (void)data;
 
+    wlr_xwayland_surface_set_fullscreen(surface->wlr_xwayland_surface, surface->wlr_xwayland_surface->fullscreen);
 }
 
 static void IvyXwaylandSurface_HandleRequestActive(struct wl_listener *listener, void *data)
 {
+    IvyXwaylandSurface *surface = wl_container_of(listener, surface, request_activate);
+    (void)data;
 
+    Ivy_Xwayland_Focus(surface);
 }

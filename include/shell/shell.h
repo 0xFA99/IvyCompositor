@@ -4,6 +4,7 @@
 #include "core/fwd.h"
 #include "shell/xdg/shell.h"
 #include "shell/xdg/activation.h"
+#include "shell/xwayland/xwayland.h"
 #include "layer/layer_shell.h"
 
 #ifdef __cplusplus
@@ -14,6 +15,7 @@ struct IvyShell {
     IvyXdgShell xdg_shell;
     IvyXdgActivation xdg_activation;
     IvyLayerShell layer_shell;
+    IvyXwayland xwayland;
 };
 
 void Ivy_Shell_Init(IvyShell *shell);

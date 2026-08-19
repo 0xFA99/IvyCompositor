@@ -13,6 +13,7 @@ extern "C" {
 struct IvyXwayland
 {
     struct wlr_xwayland *wlr_xwayland;
+    struct wl_list surface;
 
     struct wl_listener ready;
     struct wl_listener new_surface;
@@ -20,7 +21,7 @@ struct IvyXwayland
 
 void Ivy_Xwayland_Init(IvyXwayland *xwayland);
 void Ivy_Xwayland_Destroy(IvyXwayland *xwayland);
-void Ivy_Xwayland_Focus(IvyXwayland *xwayland);
+void Ivy_Xwayland_Focus(const IvyXwaylandSurface *surface);
 
 #ifdef __cplusplus
 }
