@@ -39,6 +39,7 @@ void Ivy_XdgToplevelManager_Init(IvyXdgToplevelManager *toplevel_manager);
 void Ivy_XdgToplevelManager_Destroy(IvyXdgToplevelManager *toplevel_manager);
 IvyXdgToplevel *Ivy_XdgToplevel_SurfaceAt(IvyServer *server, double lx, double ly, struct wlr_surface **surface, double *sx, double *sy);
 void Ivy_XdgToplevel_Focus(IvyXdgToplevel *toplevel);
+void Ivy_XdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges);
 
 #ifdef __cplusplus
 }

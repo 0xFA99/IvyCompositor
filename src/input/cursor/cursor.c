@@ -4,13 +4,17 @@
 #include "input/seat.h"
 #include "input/cursor/cursor.h"
 #include "input/input.h"
+#include "shell/xdg/toplevel.h"
 
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_pointer.h>
+#include <wlr/types/wlr_keyboard.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/util/box.h>
+
+#include <linux/input-event-codes.h>
 
 #define IVY_CURSOR_DEFAULT_SIZE 24
 #define IVY_CURSOR_DEFAULT_STYLE "default"
@@ -166,8 +170,14 @@ static void IvyCursor_ProcessResize(const IvyCursor *cursor)
     const struct wlr_box *geo_box = &toplevel->wlr_xdg_toplevel->base->geometry;
     wlr_scene_node_set_position(&toplevel->wlr_scene_tree->node, new_left - geo_box->x, new_top - geo_box->y);
 
-    const int new_width = new_right - new_left;
-    const int new_height = new_bottom - new_top;
+    int new_width = new_right - new_left;
+    int new_height = new_bottom - new_top;
+    if (new_width < 10) {
+        new_width = 10;
+    }
+    if (new_height < 10) {
+        new_height = 10;
+    }
     wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, new_width, new_height);
 }
 
@@ -208,7 +218,20 @@ static void IvyCursor_HandleButton(struct wl_listener *listener, void *data)
         struct wlr_surface *surface = NULL;
         IvyXdgToplevel *toplevel = Ivy_XdgToplevel_SurfaceAt(cursor->server, cursor->wlr_cursor->x, cursor->wlr_cursor->y, &surface, &sx, &sy);
 
-        Ivy_XdgToplevel_Focus(toplevel);
+        if (toplevel) {
+            Ivy_XdgToplevel_Focus(toplevel);
+
+            struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
+            u32 modifiers = keyboard ? wlr_keyboard_get_modifiers(keyboard) : 0;
+
+            if (modifiers & WLR_MODIFIER_ALT) {
+                if (event->button == BTN_LEFT) {
+                    Ivy_XdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_MOVE, 0);
+                } else if (event->button == BTN_RIGHT) {
+                    Ivy_XdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_RESIZE, 0);
+                }
+            }
+        }
     }
 }
 

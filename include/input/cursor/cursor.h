@@ -14,11 +14,11 @@
 extern "C" {
 #endif
 
-typedef enum {
+enum IvyCursorMode {
     IVY_CURSOR_PASSTHROUGH,
     IVY_CURSOR_RESIZE,
     IVY_CURSOR_MOVE
-} IvyCursorMode;
+};
 
 typedef struct {
     IvyCursorMode   mode;

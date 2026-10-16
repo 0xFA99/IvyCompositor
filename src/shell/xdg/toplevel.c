@@ -15,8 +15,6 @@ static void IvyXdgToplevel_HandleUnmap(struct wl_listener *listener, void *data)
 static void IvyXdgToplevel_HandleCommit(struct wl_listener *listener, void *data);
 static void IvyXdgToplevel_HandleDestroy(struct wl_listener *listener, void *data);
 
-static void IvyXdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges);
-
 static void IvyXdgToplevel_HandleRequestMove(struct wl_listener *listener, void *data);
 static void IvyXdgToplevel_HandleRequestResize(struct wl_listener *listener, void *data);
 static void IvyXdgToplevel_HandleRequestMaximize(struct wl_listener *listener, void *data);
@@ -204,7 +202,7 @@ static void IvyXdgToplevel_HandleDestroy(struct wl_listener *listener, void *dat
     }
 }
 
-static void IvyXdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges)
+void Ivy_XdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorMode mode, u32 edges)
 {
     IvyCursor *cursor = &toplevel->server->input.cursor;
     cursor->grab.toplevel = toplevel;
@@ -218,6 +216,24 @@ static void IvyXdgToplevel_BeginInteractive(IvyXdgToplevel *toplevel, IvyCursorM
     }
 
     struct wlr_box *geo_box = &toplevel->wlr_xdg_toplevel->base->geometry;
+
+    if (edges == 0) {
+        double center_x = toplevel->wlr_scene_tree->node.x + geo_box->x + (geo_box->width / 2.0);
+        double center_y = toplevel->wlr_scene_tree->node.y + geo_box->y + (geo_box->height / 2.0);
+
+        if (cursor->wlr_cursor->x < center_x) {
+            edges |= WLR_EDGE_LEFT;
+        } else {
+            edges |= WLR_EDGE_RIGHT;
+        }
+
+        if (cursor->wlr_cursor->y < center_y) {
+            edges |= WLR_EDGE_TOP;
+        } else {
+            edges |= WLR_EDGE_BOTTOM;
+        }
+    }
+
     double border_x = (toplevel->wlr_scene_tree->node.x + geo_box->x) + ((edges & WLR_EDGE_RIGHT) ? geo_box->width : 0);
     double border_y = (toplevel->wlr_scene_tree->node.y + geo_box->y) + ((edges & WLR_EDGE_BOTTOM) ? geo_box->height : 0);
 
@@ -236,7 +252,7 @@ static void IvyXdgToplevel_HandleRequestMove(struct wl_listener *listener, void 
     IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_move);
     (void)data;
 
-    IvyXdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_MOVE, 0);
+    Ivy_XdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_MOVE, 0);
 }
 
 static void IvyXdgToplevel_HandleRequestResize(struct wl_listener *listener, void *data)
@@ -244,7 +260,7 @@ static void IvyXdgToplevel_HandleRequestResize(struct wl_listener *listener, voi
     IvyXdgToplevel *toplevel = wl_container_of(listener, toplevel, request_resize);
     struct wlr_xdg_toplevel_resize_event *event = data;
 
-    IvyXdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_RESIZE, event->edges);
+    Ivy_XdgToplevel_BeginInteractive(toplevel, IVY_CURSOR_RESIZE, event->edges);
 }
 
 static void IvyXdgToplevel_HandleRequestMaximize(struct wl_listener *listener, void *data)

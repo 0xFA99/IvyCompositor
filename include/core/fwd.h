@@ -17,6 +17,7 @@ typedef struct IvySeat IvySeat;
 typedef struct IvyKeyboardManager IvyKeyboardManager;
 typedef struct IvyKeyboard IvyKeyboard;
 typedef struct IvyCursor IvyCursor;
+typedef enum IvyCursorMode IvyCursorMode;
 typedef struct IvyCursorShape IvyCursorShape;
 
 typedef struct IvyIdle IvyIdle;
